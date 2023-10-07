@@ -1,1 +1,9 @@
-dunas(sao_como_divas).
+play :- write('Hello World').
+
+inicializar_tabuleiro(T) :- T = [[0,   0, 0,  0, 0,   0, 0],
+                                 [0, gp1, 0, rp, 0, gp2, 0],
+                                 [0, 0, 0, 0, 0, 0, 0],
+                                 [0, 0, 0, 0, 0, 0, 0],
+                                 [0, 0, 0, 0, 0, 0, 0],
+                                 [0, gb1, 0, rb, 0, gb2, 0],
+                                 [0, 0, 0, 0, 0, 0, 0]].
