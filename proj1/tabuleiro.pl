@@ -11,6 +11,10 @@ inicializar_tabuleiro(T) :- T = [[0,   0, 0,  0, 0,   0, 0],
 substituir(Pos, List, NewElem, ListFinal, OldElem) :- nth1(Pos, List, OldElem, R),
                                                       nth1(Pos, ListFinal, NewElem, R).
 
+substituir(X, Y, T, NewElem, TabuleiroFinal, OldElem) :- nth1(Y, T, Linha),
+                                                                 substituir(X, Linha, NewElem, LinhaTemp, OldElem),
+                                                                 substituir(Y, T, LinhaTemp, TabuleiroFinal, _).
+
 mover_peca_aux(T, Xi, Yi, Xf, Yf, T2) :- nth1(Yi, T, LinhaInicial),
                                          substituir(Xi, LinhaInicial, 0, LinhaInicialTemp, Peca),
                                          substituir(Yi, T, LinhaInicialTemp, T3, X1),
@@ -47,12 +51,25 @@ posso_mover(T, Nome, Xf, Yf):- Xf >= 1, Xf =< 7, Yf >= 1, Yf =< 7,
                                 (0 is Xf - Xi, -2 is Yf - Yi);
                                 (-2 is Xf - Xi, 2 is Yf - Yi);
                                 (-2 is Xf - Xi, 0 is Yf - Yi);
-                                (-2 is Xf - Xi, -2 is Yf - Yi)
-                                )).
+                                (-2 is Xf - Xi, -2 is Yf - Yi))).
 
+eliminar_caminho(T, Nome, Xf, Yf, T2) :- procurar_peca(T, Nome, Xi, Yi),
+                                      XiM is Xi + 1, YiM is Yi + 1, Xim is Xi - 1, Yim is Yi - 1,
+                                     (((2 is Xf - Xi, 2 is Yf - Yi), substituir(XiM, YiM, T, -1, T2, _));
+                                      ((2 is Xf - Xi, 0 is Yf - Yi), substituir(XiM, Yi, T, -1, T2, _));
+                                      ((2 is Xf - Xi, -2 is Yf - Yi), substituir(XiM, Yim, T, -1, T2, _));
+                                      ((0 is Xf - Xi, 2 is Yf - Yi), substituir(Xi, YiM, T, -1, T2, _));
+                                      ((0 is Xf - Xi, -2 is Yf - Yi), substituir(Xi, Yim, T, -1, T2, _));
+                                      ((-2 is Xf - Xi, 2 is Yf - Yi), substituir(Xim, YiM, T, -1, T2, _));
+                                      ((-2 is Xf - Xi, 0 is Yf - Yi), substituir(Xim, Yi, T, -1, T2, _));
+                                      ((-2 is Xf - Xi, -2 is Yf - Yi), substituir(Xim, Yim, T, -1, T2, _))).
+
+final(T):- (not(procurar_peca(T, rp, _X1, _Y1)), write('Branco Ganha!!!')) ; (not(procurar_peca(T, rb, _X2, _Y2)), write('Preto Ganha!!!')).
+
+play_aux(T):- final(T), !.
 play_aux(T):- write('1 - jogar | 0 - sair'), nl,
               read(X), nl,
-              (X = 1, write('jogar'), nl, write(T), nl, play_aux(T));
+              (X = 1, write('jogar'), nl, read(_X), nl, read(_Y), nl, mover_peca(T, gb1, _X, _Y, T2), nl, play_aux(T2));
               (X = 0, write('sair')).
 
 play :- inicializar_tabuleiro(T), play_aux(T).
