@@ -66,6 +66,11 @@ eliminar_caminho(T, Nome, Xf, Yf, T2) :- procurar_peca(T, Nome, Xi, Yi),
 
 final(T):- (not(procurar_peca(T, rp, _X1, _Y1)), write('Branco Ganha!!!')) ; (not(procurar_peca(T, rb, _X2, _Y2)), write('Preto Ganha!!!')).
 
+print(T):- between(1, 7, _N),
+           nth(_N, T, Linha),
+           write(Linha),
+           fail.
+
 play_aux(T):- final(T), !.
 play_aux(T):- write('1 - jogar | 0 - sair'), nl,
               read(X), nl,
