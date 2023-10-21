@@ -1,4 +1,5 @@
 :-use_module(library(lists)).
+:-consult('robot.pl').
 
 inicializar_tabuleiro(T) :- T = [[0,   0, 0,  0, 0,   0, 0],
                                  [0, gp1, 0, rp, 0, gp2, 0],
