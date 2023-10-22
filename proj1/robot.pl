@@ -1,3 +1,8 @@
+:-use_module(library(lists)).
+
+not(X) :- X, !, fail.
+not(_X).
+
 connects_bfs(S, F):-
     connects_bfs([S], F, [S]).
 
@@ -31,6 +36,23 @@ my_bfs([Head|Remainder], Visited) :-
     append(Visited, FoundList, NewVisited),
     append(Remainder, FoundList, NewRemainder),
     my_bfs(NewRemainder, NewVisited).
+
+all_paths(StartingNode, EndNode, ResultingPath) :-
+    all_paths([StartingNode], [StartingNode], [], ResultingPath, EndNode).
+% all_paths(Queue, Visited, PreviousPath, ResultingPath, EndNode).
+all_paths([], _V, _P, [], _E).
+all_paths([Head|Remainder], Visited, PreviousPath, ResultingPath, EndNode) :-
+    Head = EndNode, reverse([Head|PreviousPath], ResultingPath).
+all_paths([Head|Remainder], Visited, PreviousPath, ResultingPath, EndNode) :-
+    write(Head), nl,
+    findall(Node,
+    ( connected(Head, Node),
+    not(member(Node, Visited))), FoundList),
+    append(Visited, FoundList, NewVisited),
+    append(Remainder, FoundList, NewRemainder),
+    NewPath = [Head|PreviousPath],
+    all_paths(NewRemainder, NewVisited, NewPath, ResultingPath, EndNode).
+    
 
 % procurar_peca(T, Nome, X, Y):- (nth1(1, T, Linha1), nth1(X, Linha1, Nome), Y = 1);
 %                                (nth1(2, T, Linha2), nth1(X, Linha2, Nome), Y = 2);
