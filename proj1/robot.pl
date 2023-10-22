@@ -38,21 +38,31 @@ my_bfs([Head|Remainder], Visited) :-
     my_bfs(NewRemainder, NewVisited).
 
 all_paths(StartingNode, EndNode, ResultingPath) :-
-    all_paths([StartingNode], [StartingNode], [], ResultingPath, EndNode).
-% all_paths(Queue, Visited, PreviousPath, ResultingPath, EndNode).
+    all_paths([StartingNode], [StartingNode], [[StartingNode]], ResultingPath, EndNode).
+% all_paths(Queue, Visited, PreviousPaths, ResultingPath, EndNode).
 all_paths([], _V, _P, [], _E).
-all_paths([Head|Remainder], Visited, PreviousPath, ResultingPath, EndNode) :-
+all_paths([Head|Remainder], Visited, [PreviousPath|_R], ResultingPath, EndNode) :-
     Head = EndNode, reverse([Head|PreviousPath], ResultingPath).
-all_paths([Head|Remainder], Visited, PreviousPath, ResultingPath, EndNode) :-
+all_paths([Head|Remainder], Visited, [PreviousPath|PathsRemainder], ResultingPath, EndNode) :-
     write(Head), nl,
     findall(Node,
     ( connected(Head, Node),
     not(member(Node, Visited))), FoundList),
+
     append(Visited, FoundList, NewVisited),
     append(Remainder, FoundList, NewRemainder),
-    NewPath = [Head|PreviousPath],
-    all_paths(NewRemainder, NewVisited, NewPath, ResultingPath, EndNode).
+
+    add_the_begining(FoundList, PreviousPath, NewPreviousPath),
+    append(PathsRemainder, NewPreviousPath, NewPathsRemainder),
+
+    all_paths(NewRemainder, NewVisited, NewPathsRemainder, ResultingPath, EndNode).
     
+add_the_begining(List1, ListToAppend, ResultingList) :-
+    between(1, !!len(List1)!!, _N),
+    nth1(_N, List1, Elem),
+    TempList = [Elem|ListToAppend],
+    ResultingList = [TempList|ResultingList],
+    fail.
 
 % procurar_peca(T, Nome, X, Y):- (nth1(1, T, Linha1), nth1(X, Linha1, Nome), Y = 1);
 %                                (nth1(2, T, Linha2), nth1(X, Linha2, Nome), Y = 2);
