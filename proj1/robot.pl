@@ -56,13 +56,13 @@ all_paths([Head|Remainder], Visited, [PreviousPath|PathsRemainder], ResultingPat
     append(PathsRemainder, NewPreviousPath, NewPathsRemainder),
 
     all_paths(NewRemainder, NewVisited, NewPathsRemainder, ResultingPath, EndNode).
-    
-add_the_begining(List1, ListToAppend, ResultingList) :-
-    between(1, !!len(List1)!!, _N),
-    nth1(_N, List1, Elem),
-    TempList = [Elem|ListToAppend],
-    ResultingList = [TempList|ResultingList],
-    fail.
+
+add_the_begining(List1, ListToAppend, ResultingList) :- add_the_begining_aux(List1, ListToAppend, ResultingList, []).
+add_the_begining_aux([], ListToAppend, ResultingList, ResultingList).
+add_the_begining_aux([Head | Rest], ListToAppend, ResultingList, TempList) :-
+    Aux_List = [Head|ListToAppend],
+    TempList = [Aux_List|TempList],
+    add_the_begining_aux(Rest, ListToAppend, ResultingList, TempList).
 
 % procurar_peca(T, Nome, X, Y):- (nth1(1, T, Linha1), nth1(X, Linha1, Nome), Y = 1);
 %                                (nth1(2, T, Linha2), nth1(X, Linha2, Nome), Y = 2);
@@ -93,8 +93,10 @@ X se Y.
 :- op(560, xf, ser_guerreiro).
 :- op(560, xf, ser_peca).
 :- op(560, xf, ser_valido).
+:- op(560, xf, ser_preto).
+:- op(560, xf, ser_branco).
 
-Nome esta_em X-Y no_tabuleiro T se procurar_peca(T, Nome, X, Y).
+Nome esta_em X-Y no_tabuleiro T :- procurar_peca(T, Nome, X, Y).
 
 rp ser_rei.
 rb ser_rei.
@@ -102,27 +104,34 @@ gp1 ser_guerreiro.
 gp2 ser_guerreiro.
 gb1 ser_guerreiro.
 gb2 ser_guerreiro.
-Peca ser_peca se Peca ser_rei; Peca ser_guerreiro.
+Peca ser_peca :- Peca ser_rei; Peca ser_guerreiro.
 
-X-Y ser_valido se X >= 1, X =< 7, Y >= 1, Y =< 7.
+rp ser_preto.
+gp1 ser_preto.
+gp2 ser_preto.
+rb ser_branco.
+gb1 ser_branco.
+gb2 ser_branco.
 
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 1, Y is Yi + 1 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 1, Y is Yi - 1 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 1, Y is Yi + 1 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 1, Y is Yi - 1 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 1, Y is Yi e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 1, Y is Yi e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi + 1 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi - 1 e X-Y ser_valido.
+X-Y ser_valido :- X >= 1, X =< 7, Y >= 1, Y =< 7.
 
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 2, Y is Yi + 2 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 2, Y is Yi - 2 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 2, Y is Yi + 2 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 2, Y is Yi - 2 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 2, Y is Yi e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 2, Y is Yi e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi + 2 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T se Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi - 2 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 1, Y is Yi + 1 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 1, Y is Yi - 1 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 1, Y is Yi + 1 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 1, Y is Yi - 1 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 1, Y is Yi e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 1, Y is Yi e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi + 1 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi - 1 e X-Y ser_valido.
+
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 2, Y is Yi + 2 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 2, Y is Yi - 2 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 2, Y is Yi + 2 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 2, Y is Yi - 2 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 2, Y is Yi e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 2, Y is Yi e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi + 2 e X-Y ser_valido.
+Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi - 2 e X-Y ser_valido.
 
 
 
