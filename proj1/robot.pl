@@ -37,13 +37,13 @@ my_bfs([Head|Remainder], Visited) :-
     append(Remainder, FoundList, NewRemainder),
     my_bfs(NewRemainder, NewVisited).
 
-all_paths(StartingNode, EndNode, ResultingPath) :-
-    all_paths([StartingNode], [StartingNode], [[StartingNode]], ResultingPath, EndNode).
-% all_paths(Queue, Visited, PreviousPaths, ResultingPath, EndNode).
-all_paths([], _V, _P, [], _E).
-all_paths([Head|Remainder], Visited, [PreviousPath|_R], ResultingPath, EndNode) :-
-    Head = EndNode, reverse([Head|PreviousPath], ResultingPath).
-all_paths([Head|Remainder], Visited, [PreviousPath|PathsRemainder], ResultingPath, EndNode) :-
+path(StartingNode, EndNode, ResultingPath) :-
+    path([StartingNode], [StartingNode], [[StartingNode]], ResultingPath, EndNode).
+% path(Queue, Visited, PreviousPaths, ResultingPath, EndNode).
+path([], _V, _P, [], _E).
+path([Head|Remainder], Visited, [PreviousPath|_R], ResultingPath, EndNode) :-
+    Head = EndNode, reverse(PreviousPath, ResultingPath).
+path([Head|Remainder], Visited, [PreviousPath|PathsRemainder], ResultingPath, EndNode) :-
     write(Head), nl,
     findall(Node,
     ( connected(Head, Node),
@@ -55,14 +55,36 @@ all_paths([Head|Remainder], Visited, [PreviousPath|PathsRemainder], ResultingPat
     add_the_begining(FoundList, PreviousPath, NewPreviousPath),
     append(PathsRemainder, NewPreviousPath, NewPathsRemainder),
 
-    all_paths(NewRemainder, NewVisited, NewPathsRemainder, ResultingPath, EndNode).
+    path(NewRemainder, NewVisited, NewPathsRemainder, ResultingPath, EndNode).
 
-add_the_begining(List1, ListToAppend, ResultingList) :- add_the_begining_aux(List1, ListToAppend, ResultingList, []).
-add_the_begining_aux([], ListToAppend, ResultingList, ResultingList).
-add_the_begining_aux([Head | Rest], ListToAppend, ResultingList, TempList) :-
-    Aux_List = [Head|ListToAppend],
-    TempList = [Aux_List|TempList],
-    add_the_begining_aux(Rest, ListToAppend, ResultingList, TempList).
+add_the_begining([], ListToAppend, []).
+add_the_begining([Head | Rest], ListToAppend, [HeadList | RestLists]) :-
+    HeadList = [Head|ListToAppend],
+    add_the_begining(Rest, ListToAppend, RestLists).
+
+number_of_steps(StartingNode, EndNode, NumberOfSteps) :-
+    number_of_steps([StartingNode], [StartingNode], [0], NumberOfSteps, EndNode).
+% number_of_steps(Queue, Visited, NumberOfStepsList, TotalNumberOfSteps, EndNode).
+number_of_steps([Head|Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, EndNode) :-
+    Head = EndNode, TotalNumberOfSteps is CurrentNumberOfSteps.
+number_of_steps([Head|Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, EndNode) :-
+    write(Head), nl,
+    findall(Node,
+    ( connected(Head, Node),
+    not(member(Node, Visited))), FoundList),
+
+    append(Visited, FoundList, NewVisited),
+    append(Remainder, FoundList, NewRemainder),
+
+    NewCurrentNumberOfSteps is CurrentNumberOfSteps + 1,
+    length(FoundList, Size),
+    build_list(NewCurrentNumberOfSteps, Size, NewCurrentNumberOfStepsList),
+    append(RestList, NewCurrentNumberOfStepsList, NewRestList),
+
+    number_of_steps(NewRemainder, NewVisited, NewRestList, TotalNumberOfSteps, EndNode).
+    
+build_list(X, N, List)  :- 
+    findall(X, between(1, N, _), List).
 
 % procurar_peca(T, Nome, X, Y):- (nth1(1, T, Linha1), nth1(X, Linha1, Nome), Y = 1);
 %                                (nth1(2, T, Linha2), nth1(X, Linha2, Nome), Y = 2);
