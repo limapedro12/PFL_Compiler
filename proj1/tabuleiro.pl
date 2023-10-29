@@ -67,7 +67,7 @@ modulo(X, Y) :- Y is -X.
 eliminar_caminho(T, Nome, Xf, Yf, T2) :- trace,
                                          procurar_peca(T, Nome, Xi, Yi),
                                          direcao(Xi-Yi, Xf-Yf, Dir),
-                                         findall(X-Y, (direcao(Xi-Yi, X-Y, Dir)
+                                         findall(X-Y, (direcao(Xi-Yi, X-Y, Dir) 
                                                       %Xi-X < Xi-Xf, Yi-Y < Yi-Yf,
                                                       %  DeltaX1Temp is Xi-X,
                                                       %  modulo(DeltaX1Temp, DeltaX1),
