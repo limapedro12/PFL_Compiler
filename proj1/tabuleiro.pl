@@ -6,7 +6,7 @@ initial_state(T) :- T = [[0,   0, 0,  0, 0,   0, 0],
                                  [0, gp1, 0, rp, 0, gp2, 0],
                                  [0,   0, 0,  0, 0,   0, 0],
                                  [0,   0, 0,  0, 0,   0, 0],
-                                 [0,   0, 0,  0, 0,   0, 0],
+                                 [0,   0, -1,  0, 0,   0, 0],
                                  [0, gb1, 0, rb, 0, gb2, 0],
                                  [0,   0, 0,  0, 0,   0, 0]].
 
@@ -40,8 +40,6 @@ move(T, Nome, Xf, Yf, T3):- posso_mover(T, Nome, Xf, Yf),
 
 move(T, Nome, Xf, Yf, T2) :- write('Movimento Invalido.'), nl, T = T2.
 
-posso_mover(T, Nome, Xf, Yf) :- Nome pode_ir_para Xf-Yf no_tabuleiro T.
-
 valid_moves(T, preto, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_preto, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
 valid_moves(T, branco, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_branco, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
 
@@ -64,16 +62,31 @@ valid_moves(T, branco, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_branco, pr
 %                                 (-2 is Xf - Xi, 0 is Yf - Yi);
 %                                 (-2 is Xf - Xi, -2 is Yf - Yi))).
 
-eliminar_caminho(T, Nome, Xf, Yf, T2) :- procurar_peca(T, Nome, Xi, Yi),
-                                      XiM is Xi + 1, YiM is Yi + 1, Xim is Xi - 1, Yim is Yi - 1,
-                                     (((2 is Xf - Xi, 2 is Yf - Yi), substituir(XiM, YiM, T, -1, T2, _));
-                                      ((2 is Xf - Xi, 0 is Yf - Yi), substituir(XiM, Yi, T, -1, T2, _));
-                                      ((2 is Xf - Xi, -2 is Yf - Yi), substituir(XiM, Yim, T, -1, T2, _));
-                                      ((0 is Xf - Xi, 2 is Yf - Yi), substituir(Xi, YiM, T, -1, T2, _));
-                                      ((0 is Xf - Xi, -2 is Yf - Yi), substituir(Xi, Yim, T, -1, T2, _));
-                                      ((-2 is Xf - Xi, 2 is Yf - Yi), substituir(Xim, YiM, T, -1, T2, _));
-                                      ((-2 is Xf - Xi, 0 is Yf - Yi), substituir(Xim, Yi, T, -1, T2, _));
-                                      ((-2 is Xf - Xi, -2 is Yf - Yi), substituir(Xim, Yim, T, -1, T2, _))).
+modulo(X, X) :- X >= 0.
+modulo(X, Y) :- Y is -X.
+eliminar_caminho(T, Nome, Xf, Yf, T2) :- trace,
+                                         procurar_peca(T, Nome, Xi, Yi),
+                                         direcao(Xi-Yi, Xf-Yf, Dir),
+                                         findall(X-Y, (direcao(Xi-Yi, X-Y, Dir)
+                                                      %Xi-X < Xi-Xf, Yi-Y < Yi-Yf,
+                                                      %  DeltaX1Temp is Xi-X,
+                                                      %  modulo(DeltaX1Temp, DeltaX1),
+                                                      %  DeltaX2Temp is Xi-Xf,
+                                                      %  modulo(DeltaX2Temp, DeltaX2),
+                                                      %  DeltaY1Temp is Yi-Y,
+                                                      %  modulo(DeltaY1Temp, DeltaY1),
+                                                      %  DeltaY2Temp is Yi-Yf,
+                                                      %  modulo(DeltaY2Temp, DeltaY2),
+                                                      %  DeltaX1 < DeltaX2,
+                                                      %  DeltaY1 < DeltaY2
+                                                      ),
+                                                       Lista),
+                                          eliminar_caminho_aux(T, Nome, Lista, T2),
+                                          notrace.
+
+eliminar_caminho_aux(T, Nome, [], T2).
+eliminar_caminho_aux(T, Nome, [X-Y|Lista], T2) :- substituir(X, Y, T, -1, T3, _),
+                                                  eliminar_caminho_aux(T3, Nome, Lista, T2).
 
 eliminar_caminho(T, _, _, _, T).
 
@@ -122,7 +135,7 @@ play_aux(T):- final(T), !.
 play_aux(T):- write('1 - jogar | 0 - sair'), nl,
               read(X), nl,
                 (X = 1, write('jogar'), nl, 
-                write('Qual peça deseja mover?'), nl,
+                write('Qual peca deseja mover?'), nl,
                 read(_P), traduz_peca(_P, Peca), nl,
                 write('Introduza a coordenada X:'), nl,
                 read(_X), nl, 

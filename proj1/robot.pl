@@ -137,23 +137,36 @@ gb2 ser_branco.
 
 X-Y ser_valido :- X >= 1, X =< 7, Y >= 1, Y =< 7.
 
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 1, Y is Yi + 1 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 1, Y is Yi - 1 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 1, Y is Yi + 1 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 1, Y is Yi - 1 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 1, Y is Yi e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 1, Y is Yi e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi + 1 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_peca, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi - 1 e X-Y ser_valido.
+direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY < 0, DeltaX = 0, Dir = norte.
+direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY > 0, DeltaX = 0, Dir = sul.
+direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY = 0, DeltaX > 0, Dir = este.
+direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY = 0, DeltaX < 0, Dir = oeste.
+direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY < 0, DeltaX > 0, DeltaX is -DeltaY, Dir = nordeste.
+direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY < 0, DeltaX < 0, DeltaX is DeltaY, Dir = noroeste.
+direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY > 0, DeltaX > 0, DeltaX is DeltaY, Dir = sudeste.
+direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY > 0, DeltaX < 0, DeltaX is -DeltaY, Dir = sudoeste.
 
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 2, Y is Yi + 2 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 2, Y is Yi - 2 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 2, Y is Yi + 2 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 2, Y is Yi - 2 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi + 2, Y is Yi e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi - 2, Y is Yi e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi + 2 e X-Y ser_valido.
-Peca pode_ir_para X-Y no_tabuleiro T :- Peca ser_guerreiro, Peca esta_em Xi-Yi no_tabuleiro T, X is Xi, Y is Yi - 2 e X-Y ser_valido.
+mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = norte, Xf is Xi, Yf is Yi - 1.
+mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = sul, Xf is Xi, Yf is Yi + 1.
+mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = este, Xf is Xi + 1, Yf is Yi.
+mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = oeste, Xf is Xi - 1, Yf is Yi.
+mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = nordeste, Xf is Xi + 1, Yf is Yi - 1.
+mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = noroeste, Xf is Xi - 1, Yf is Yi - 1.
+mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = sudeste, Xf is Xi + 1, Yf is Yi + 1.
+mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = sudoeste, Xf is Xi - 1, Yf is Yi + 1.
 
+posso_mover(T, Peca, Xf, Yf) :- Peca esta_em Xi-Yi no_tabuleiro T,
+                                PecaDestino esta_em Xf-Yf no_tabuleiro T,
+                                PecaDestino \= -1, 
+                                direcao(Xi-Yi, Xf-Yf, Dir),
+                             ((Peca ser_guerreiro, posso_mover(T, Xi-Yi, Xf-Yf, Dir, 2));
+                              (Peca ser_rei, posso_mover(T, Xi-Yi, Xf-Yf, Dir, 1))),
+                               Xf-Yf ser_valido.
 
+posso_mover(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- Xi-Yi = Xf-Yf.
+posso_mover(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- NumberStepsLeft > 0,
+                                                      mover_um_na_direcao(Xi-Yi, Xi1-Yi1, Dir),
+                                                      PecaDestino esta_em Xi1-Yi1 no_tabuleiro T,
+                                                    ((PecaDestino = -1, posso_mover(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft));
+                                                      posso_mover(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft - 1)).
 
