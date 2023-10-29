@@ -119,7 +119,7 @@ play_aux(T):- write('1 - jogar | 0 - sair'), nl,
                 play_aux(T2));
               (X = 0, write('sair')).
 
-escolher_modo(T) :- write('1 - jogar 1v1 | 2 - jogar contra AI(nivel 1) | 2 - jogar contra AI(nivel 2) | 0 - sair'), nl,
+escolher_modo(T) :- write('1 - jogar 1v1 | 2 - jogar contra AI(nivel 1) | 3 - jogar contra AI(nivel 2) | 0 - sair'), nl,
                     read(X), nl,
                       (X = 1, play_aux(T));
                       (X = 2, play_ai_1(T));
