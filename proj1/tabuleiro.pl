@@ -35,7 +35,7 @@ procurar_peca(T, Nome, X, Y):- (nth1(1, T, Linha1), nth1(X, Linha1, Nome), Y = 1
 
 move(T, Nome, Xf, Yf, T3):- posso_mover(T, Nome, Xf, Yf),
                                   procurar_peca(T, Nome, Xi, Yi),
-                                  eliminar_caminho(T, Nome, Xf, Yf, T2),
+                                  %eliminar_caminho(T, Nome, Xf, Yf, T2),
                                   mover_peca_aux(T2, Xi, Yi, Xf, Yf, T3).
 
 move(T, Nome, Xf, Yf, T2) :- write('Movimento Invalido.'), nl, T = T2.
@@ -64,31 +64,23 @@ valid_moves(T, branco, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_branco, pr
 
 modulo(X, X) :- X >= 0.
 modulo(X, Y) :- Y is -X.
-eliminar_caminho(T, Nome, Xf, Yf, T2) :- trace,
-                                         procurar_peca(T, Nome, Xi, Yi),
+ordenar(A, B, Maior, Menor):- A >= B, Maior = A, Menor = B.
+ordenar(A, B, Maior, Menor):- A < B, Maior = B, Menor = A.
+
+eliminar_caminho(T, Nome, Xf, Yf, T2) :- procurar_peca(T, Nome, Xi, Yi),
                                          direcao(Xi-Yi, Xf-Yf, Dir),
-                                         findall(X-Y, (direcao(Xi-Yi, X-Y, Dir) 
-                                                      %Xi-X < Xi-Xf, Yi-Y < Yi-Yf,
-                                                      %  DeltaX1Temp is Xi-X,
-                                                      %  modulo(DeltaX1Temp, DeltaX1),
-                                                      %  DeltaX2Temp is Xi-Xf,
-                                                      %  modulo(DeltaX2Temp, DeltaX2),
-                                                      %  DeltaY1Temp is Yi-Y,
-                                                      %  modulo(DeltaY1Temp, DeltaY1),
-                                                      %  DeltaY2Temp is Yi-Yf,
-                                                      %  modulo(DeltaY2Temp, DeltaY2),
-                                                      %  DeltaX1 < DeltaX2,
-                                                      %  DeltaY1 < DeltaY2
-                                                      ),
-                                                       Lista),
-                                          eliminar_caminho_aux(T, Nome, Lista, T2),
-                                          notrace.
+                                         findall(X-Y, posicao_percorrida(Xi-Yi, Xf-Yf, X-Y, Dir), Lista),
+                                         trace, eliminar_caminho_aux(T, Nome, Lista, T2), notrace.
 
-eliminar_caminho_aux(T, Nome, [], T2).
-eliminar_caminho_aux(T, Nome, [X-Y|Lista], T2) :- substituir(X, Y, T, -1, T3, _),
-                                                  eliminar_caminho_aux(T3, Nome, Lista, T2).
+posicao_percorrida(Xi-Yi, Xf-Yf, X-Y, Dir):- ordenar(Xi, Xf, Xmaior, Xmenor), ordenar(Yi, Yf, Ymaior, Ymenor),
+                                             between(Xmenor, Xmaior, I), between(Ymenor, Ymaior, J),
+                                             not((I = Xi, J = Yi)), not((I = Xf, J = Yf)),
+                                             direcao(Xi-Yi, I-J, Dir),
+                                             X is I, Y is J.
 
-eliminar_caminho(T, _, _, _, T).
+eliminar_caminho_aux(T, [], T).
+eliminar_caminho_aux(T, [X-Y|Lista], T2) :- substituir(X, Y, T, -1, T3, _),
+                                            eliminar_caminho_aux(T3, Lista, T2).
 
 not(X) :- X, !, fail.
 not(_X).
