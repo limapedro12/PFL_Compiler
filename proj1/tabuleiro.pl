@@ -2,13 +2,13 @@
 :-consult('robot.pl').
 :-use_module(library(between)).
 
-initial_state(T) :- T = [[0,   0, 0,  0, 0,   0, 0],
-                                 [0, gp1, 0, rp, 0, gp2, 0],
-                                 [0,   0, 0,  0, 0,   0, 0],
-                                 [0,   0, 0,  0, 0,   0, 0],
-                                 [0,   0, -1,  0, 0,   0, 0],
-                                 [0, gb1, 0, rb, 0, gb2, 0],
-                                 [0,   0, 0,  0, 0,   0, 0]].
+initial_state(T) :- T = [[0, 0, 0, 0, 0, 0, 0],
+                         [0, p, 0, n, 0, q, 0],
+                         [0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0],
+                         [0, b, 0, u, 0, d, 0],
+                         [0, 0, 0, 0, 0, 0, 0]].
 
 substituir(Pos, List, NewElem, ListFinal, OldElem) :- nth1(Pos, List, OldElem, R),
                                                       nth1(Pos, ListFinal, NewElem, R).
@@ -35,32 +35,13 @@ procurar_peca(T, Nome, X, Y):- (nth1(1, T, Linha1), nth1(X, Linha1, Nome), Y = 1
 
 move(T, Nome, Xf, Yf, T3):- posso_mover(T, Nome, Xf, Yf),
                                   procurar_peca(T, Nome, Xi, Yi),
-                                  %eliminar_caminho(T, Nome, Xf, Yf, T2),
+                                  eliminar_caminho(T, Nome, Xf, Yf, T2),
                                   mover_peca_aux(T2, Xi, Yi, Xf, Yf, T3).
 
 move(T, Nome, Xf, Yf, T2) :- write('Movimento Invalido.'), nl, T = T2.
 
 valid_moves(T, preto, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_preto, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
 valid_moves(T, branco, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_branco, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
-
-% posso_mover(T, Nome, Xf, Yf):- Xf >= 1, Xf =< 7, Yf >= 1, Yf =< 7,
-%                                procurar_peca(T, Nome1, Xf, Yf),
-%                                Nome1 \= -1,
-%                                procurar_peca(T, Nome, Xi, Yi),
-%                                (((Nome = rp; Nome = rb),
-%                                 (1 >= Xf - Xi, -1 =< Xf - Xi),
-%                                 (1 >= Yf - Yi, -1 =< Yf - Yi));
-%                                 ((Nome = gp1; Nome = gp2; Nome = gb1; Nome = gb2),
-%                                 ((1 >= Xf - Xi, -1 =< Xf - Xi),
-%                                 (1 >= Yf - Yi, -1 =< Yf - Yi));
-%                                 (2 is Xf - Xi, 2 is Yf - Yi);
-%                                 (2 is Xf - Xi, 0 is Yf - Yi);
-%                                 (2 is Xf - Xi, -2 is Yf - Yi);
-%                                 (0 is Xf - Xi, 2 is Yf - Yi);
-%                                 (0 is Xf - Xi, -2 is Yf - Yi);
-%                                 (-2 is Xf - Xi, 2 is Yf - Yi);
-%                                 (-2 is Xf - Xi, 0 is Yf - Yi);
-%                                 (-2 is Xf - Xi, -2 is Yf - Yi))).
 
 modulo(X, X) :- X >= 0.
 modulo(X, Y) :- Y is -X.
@@ -70,7 +51,7 @@ ordenar(A, B, Maior, Menor):- A < B, Maior = B, Menor = A.
 eliminar_caminho(T, Nome, Xf, Yf, T2) :- procurar_peca(T, Nome, Xi, Yi),
                                          direcao(Xi-Yi, Xf-Yf, Dir),
                                          findall(X-Y, posicao_percorrida(Xi-Yi, Xf-Yf, X-Y, Dir), Lista),
-                                         trace, eliminar_caminho_aux(T, Nome, Lista, T2), notrace.
+                                         eliminar_caminho_aux(T, Lista, T2).
 
 posicao_percorrida(Xi-Yi, Xf-Yf, X-Y, Dir):- ordenar(Xi, Xf, Xmaior, Xmenor), ordenar(Yi, Yf, Ymaior, Ymenor),
                                              between(Xmenor, Xmaior, I), between(Ymenor, Ymaior, J),
@@ -85,7 +66,7 @@ eliminar_caminho_aux(T, [X-Y|Lista], T2) :- substituir(X, Y, T, -1, T3, _),
 not(X) :- X, !, fail.
 not(_X).
 
-final(T):- (not(procurar_peca(T, rp, _X1, _Y1)), write('Branco Ganha!!!')) ; (not(procurar_peca(T, rb, _X2, _Y2)), write('Preto Ganha!!!')).
+final(T):- (not(procurar_peca(T, n, _X1, _Y1)), write('Branco Ganha!!!')) ; (not(procurar_peca(T, u, _X2, _Y2)), write('Preto Ganha!!!')).
 
 display_game(T):- print_divisoria, nl,
            between(1, 7, _N),
@@ -105,23 +86,23 @@ print_linha(L):- write(' | '),
                  fail.
 print_linha(_L).
 
-print_elem(gp1) :- write('p'). 
-print_elem(gp2) :- write('q').
-print_elem(rp) :- write('n').
+print_elem(p) :- write('p'). 
+print_elem(q) :- write('q').
+print_elem(n) :- write('n').
 
-print_elem(gb1) :- write('b'). 
-print_elem(gb2) :- write('d').
-print_elem(rb) :- write('u').
+print_elem(b) :- write('b'). 
+print_elem(d) :- write('d').
+print_elem(u) :- write('u').
 
 print_elem(-1) :- write('X').
 print_elem(0) :- write(' ').
 
-traduz_peca('p', gp1).
-traduz_peca('q', gp2).
-traduz_peca('n', rp).
-traduz_peca('b', gb1).
-traduz_peca('d', gb2).
-traduz_peca('u', rb).
+traduz_peca('p', p).
+traduz_peca('q', q).
+traduz_peca('n', n).
+traduz_peca('b', b).
+traduz_peca('d', d).
+traduz_peca('u', u).
 
 play_aux(T):- final(T), !.
 play_aux(T):- write('1 - jogar | 0 - sair'), nl,

@@ -86,22 +86,6 @@ number_of_steps([Head|Remainder], Visited, [CurrentNumberOfSteps | RestList], To
 build_list(X, N, List)  :- 
     findall(X, between(1, N, _), List).
 
-% procurar_peca(T, Nome, X, Y):- (nth1(1, T, Linha1), nth1(X, Linha1, Nome), Y = 1);
-%                                (nth1(2, T, Linha2), nth1(X, Linha2, Nome), Y = 2);
-%                                (nth1(3, T, Linha3), nth1(X, Linha3, Nome), Y = 3);
-%                                (nth1(4, T, Linha4), nth1(X, Linha4, Nome), Y = 4);
-%                                (nth1(5, T, Linha5), nth1(X, Linha5, Nome), Y = 5);
-%                                (nth1(6, T, Linha6), nth1(X, Linha6, Nome), Y = 6);
-%                                (nth1(7, T, Linha7), nth1(X, Linha7, Nome), Y = 7).
-
-% inicializar_tabuleiro(T) :- T = [[0,   0, 0,  0, 0,   0, 0],
-%                                  [0, gp1, 0, Peca, 0, gp2, 0],
-%                                  [0,   0, 0,  0, 0,   0, 0],
-%                                  [0,   0, 0,  0, 0,   0, 0],
-%                                  [0,   0, 0,  0, 0,   0, 0],
-%                                  [0, gb1, 0, rb, 0, gb2, 0],
-%                                  [0,   0, 0,  0, 0,   0, 0]].
-
 :- op(1000, xfy, e).
 :- op(1200, xfx, se).
 
@@ -120,20 +104,20 @@ X se Y.
 
 Nome esta_em X-Y no_tabuleiro T :- procurar_peca(T, Nome, X, Y).
 
-rp ser_rei.
-rb ser_rei.
-gp1 ser_guerreiro.
-gp2 ser_guerreiro.
-gb1 ser_guerreiro.
-gb2 ser_guerreiro.
+n ser_rei.
+u ser_rei.
+p ser_guerreiro.
+q ser_guerreiro.
+b ser_guerreiro.
+d ser_guerreiro.
 Peca ser_peca :- Peca ser_rei; Peca ser_guerreiro.
 
-rp ser_preto.
-gp1 ser_preto.
-gp2 ser_preto.
-rb ser_branco.
-gb1 ser_branco.
-gb2 ser_branco.
+n ser_preto.
+p ser_preto.
+q ser_preto.
+u ser_branco.
+b ser_branco.
+d ser_branco.
 
 X-Y ser_valido :- X >= 1, X =< 7, Y >= 1, Y =< 7.
 
@@ -168,5 +152,5 @@ posso_mover(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- NumberStepsLeft > 0,
                                                       mover_um_na_direcao(Xi-Yi, Xi1-Yi1, Dir),
                                                       PecaDestino esta_em Xi1-Yi1 no_tabuleiro T,
                                                     ((PecaDestino = -1, posso_mover(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft));
-                                                      posso_mover(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft - 1)).
-
+                                                     (PecaDestino = 0, posso_mover(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft - 1));
+                                                     posso_mover(T, Xi1-Yi1, Xf-Yf, Dir, 0)).
