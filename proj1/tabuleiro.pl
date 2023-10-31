@@ -1,6 +1,8 @@
-:-use_module(library(lists)).
-:-consult('robot.pl').
-:-use_module(library(between)).
+:- use_module(library(lists)).
+:- use_module(library(between)).
+:- use_module(library(random)).
+
+:- consult('robot.pl').
 
 initial_state(T) :- T = [[0, 0, 0, 0, 0, 0, 0],
                          [0, p, 0, n, 0, q, 0],
@@ -40,8 +42,13 @@ move(T, Nome, Xf, Yf, T3):- posso_mover(T, Nome, Xf, Yf),
 
 move(T, Nome, Xf, Yf, T2) :- write('Movimento Invalido.'), nl, T = T2, fail.
 
-valid_moves(T, preto, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_preto, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
-valid_moves(T, branco, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_branco, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
+% ainda usamos???
+%valid_moves(T, preto, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_preto, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
+%valid_moves(T, branco, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_branco, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
+%
+
+valid_moves(T, preto, L):- findall([Nome, Xf-Yf], (Nome ser_preto, procurar_peca(T, Nome, Xi, Yi), posso_mover(T, Nome, Xf, Yf)), L).
+valid_moves(T, branco, L):- findall([Nome, Xf-Yf], (Nome ser_branco, procurar_peca(T, Nome, Xi, Yi), posso_mover(T, Nome, Xf, Yf)), L).
 
 modulo(X, X) :- X >= 0.
 modulo(X, Y) :- Y is -X.
@@ -75,7 +82,7 @@ display_game(T):- print_divisoria, nl,
                   print_linha(Linha), nl,
                   print_divisoria, nl,
                   fail.
-display_game(_T):- write('     1   2   3   4   5   6   7   '), nl.
+display_game(_):- write('     1   2   3   4   5   6   7   '), nl.
 
 print_divisoria :- write('   ----------------------------- '). 
 
@@ -105,6 +112,11 @@ traduz_peca('d', d).
 traduz_peca('u', u).
 traduz_peca(_, inv).
 
+movimento_aleat(T, Peca, Xf-Yf):- valid_moves(T, preto, L),
+                                  random_select(M, L, _R),
+                                  nth0(0, M, Peca),
+                                  nth0(1, M, Xf-Yf).
+
 play_1v1(T, _):- final(T), !.
 
 play_1v1(T, u):- nl, write('E a vez da equipa de rei "u" | 1 - prosseguir | 0 - sair'), nl,
@@ -112,13 +124,13 @@ play_1v1(T, u):- nl, write('E a vez da equipa de rei "u" | 1 - prosseguir | 0 - 
                  ((X = 0, write('A sair'), nl);
                  (X = 1, nl,
                  write('Qual peca deseja mover?'), nl,
-                 read(_P), traduz_peca(_P, Peca),
+                 read(P), traduz_peca(P, Peca),
                  ((Peca = b; Peca = u; Peca = d) ->
                  (write('Introduza a coordenada X do destino:'), nl,
-                 read(_X), nl,
+                 read(X), nl,
                  write('Introduza a coordenada Y do destino:'), nl,
-                 read(_Y), nl,
-                 (move(T, Peca, _X, _Y, T2) -> (nl, display_game(T2), play_1v1(T2, n));
+                 read(Y), nl,
+                 (move(T, Peca, X, Y, T2) -> (nl, display_game(T2), play_1v1(T2, n));
                  (write('Jogada invalida. Vamos tentar outra vez.'), nl,
                  play_1v1(T, u))));
                  (write('Peca invalida. Vamos tentar outra vez.'), nl,
@@ -129,13 +141,13 @@ play_1v1(T, n):- nl, write('E a vez da equipa de rei "n" | 1 - prosseguir | 0 - 
                  ((X = 0, write('A sair'), nl);
                  (X = 1, nl,
                  write('Qual peca deseja mover?'), nl,
-                 read(_P), traduz_peca(_P, Peca),
+                 read(P), traduz_peca(P, Peca),
                  ((Peca = p; Peca = n; Peca = q) ->
                  (write('Introduza a coordenada X do destino:'), nl,
-                 read(_X), nl,
+                 read(X), nl,
                  write('Introduza a coordenada Y do destino:'), nl,
-                 read(_Y), nl,
-                 (move(T, Peca, _X, _Y, T2) -> (nl, display_game(T2), play_1v1(T2, u));
+                 read(Y), nl,
+                 (move(T, Peca, X, Y, T2) -> (nl, display_game(T2), play_1v1(T2, u));
                  (write('Jogada invalida. Vamos tentar outra vez.'), nl,
                  play_1v1(T, n))));
                  (write('Peca invalida. Vamos tentar outra vez.'), nl,
