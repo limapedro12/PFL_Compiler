@@ -14,8 +14,8 @@ substituir(Pos, List, NewElem, ListFinal, OldElem) :- nth1(Pos, List, OldElem, R
                                                       nth1(Pos, ListFinal, NewElem, R).
 
 substituir(X, Y, T, NewElem, TabuleiroFinal, OldElem) :- nth1(Y, T, Linha),
-                                                                 substituir(X, Linha, NewElem, LinhaTemp, OldElem),
-                                                                 substituir(Y, T, LinhaTemp, TabuleiroFinal, _).
+                                                         substituir(X, Linha, NewElem, LinhaTemp, OldElem),
+                                                         substituir(Y, T, LinhaTemp, TabuleiroFinal, _).
 
 mover_peca_aux(T, Xi, Yi, Xf, Yf, T2) :- nth1(Yi, T, LinhaInicial),
                                          substituir(Xi, LinhaInicial, 0, LinhaInicialTemp, Peca),
@@ -34,11 +34,11 @@ procurar_peca(T, Nome, X, Y):- (nth1(1, T, Linha1), nth1(X, Linha1, Nome), Y = 1
                                (nth1(7, T, Linha7), nth1(X, Linha7, Nome), Y = 7).
 
 move(T, Nome, Xf, Yf, T3):- posso_mover(T, Nome, Xf, Yf),
-                                  procurar_peca(T, Nome, Xi, Yi),
-                                  eliminar_caminho(T, Nome, Xf, Yf, T2),
-                                  mover_peca_aux(T2, Xi, Yi, Xf, Yf, T3).
+                            procurar_peca(T, Nome, Xi, Yi),
+                            eliminar_caminho(T, Nome, Xf, Yf, T2),
+                            mover_peca_aux(T2, Xi, Yi, Xf, Yf, T3).
 
-move(T, Nome, Xf, Yf, T2) :- write('Movimento Invalido.'), nl, T = T2.
+move(T, Nome, Xf, Yf, T2) :- write('Movimento Invalido.'), nl, T = T2, fail.
 
 valid_moves(T, preto, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_preto, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
 valid_moves(T, branco, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_branco, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
@@ -66,16 +66,16 @@ eliminar_caminho_aux(T, [X-Y|Lista], T2) :- substituir(X, Y, T, -1, T3, _),
 not(X) :- X, !, fail.
 not(_X).
 
-final(T):- (not(procurar_peca(T, n, _X1, _Y1)), write('Branco Ganha!!!')) ; (not(procurar_peca(T, u, _X2, _Y2)), write('Preto Ganha!!!')).
+final(T):- (not(procurar_peca(T, n, _X1, _Y1)), write('Rei "u" Ganha!!!')) ; (not(procurar_peca(T, u, _X2, _Y2)), write('Rei "n" Ganha!!!')).
 
 display_game(T):- print_divisoria, nl,
-           between(1, 7, _N),
-           nth1(_N, T, Linha),
-           write(_N), write(' '),
-           print_linha(Linha), nl,
-           print_divisoria, nl,
-           fail.
-display_game(_T) :- write('     1   2   3   4   5   6   7   '), nl.
+                  between(1, 7, _N),
+                  nth1(_N, T, Linha),
+                  write(_N), write(' '),
+                  print_linha(Linha), nl,
+                  print_divisoria, nl,
+                  fail.
+display_game(_T):- write('     1   2   3   4   5   6   7   '), nl.
 
 print_divisoria :- write('   ----------------------------- '). 
 
@@ -103,29 +103,51 @@ traduz_peca('n', n).
 traduz_peca('b', b).
 traduz_peca('d', d).
 traduz_peca('u', u).
+traduz_peca(_, inv).
 
-play_aux(T):- final(T), !.
-play_aux(T):- write('1 - jogar | 0 - sair'), nl,
-              read(X), nl,
-                (X = 1, write('jogar'), nl, 
-                write('Qual peca deseja mover?'), nl,
-                read(_P), traduz_peca(_P, Peca), nl,
-                write('Introduza a coordenada X:'), nl,
-                read(_X), nl, 
-                write('Introduza a coordenada Y:'), nl,
-                read(_Y), nl, 
-                move(T, Peca, _X, _Y, T2), nl, 
-                display_game(T2),
-                play_aux(T2));
-              (X = 0, write('sair')).
+play_1v1(T, _):- final(T), !.
 
-escolher_modo(T) :- write('1 - jogar 1v1 | 2 - jogar contra AI(nivel 1) | 3 - jogar contra AI(nivel 2) | 0 - sair'), nl,
-                    read(X), nl,
-                      (X = 1, play_aux(T));
-                      (X = 2, play_ai_1(T));
-                      (X = 3, play_ai_2(T)).
+play_1v1(T, u):- nl, write('E a vez da equipa de rei "u" | 1 - prosseguir | 0 - sair'), nl,
+                 read(X), nl,
+                 ((X = 0, write('A sair'), nl);
+                 (X = 1, nl,
+                 write('Qual peca deseja mover?'), nl,
+                 read(_P), traduz_peca(_P, Peca),
+                 ((Peca = b; Peca = u; Peca = d) ->
+                 (write('Introduza a coordenada X do destino:'), nl,
+                 read(_X), nl,
+                 write('Introduza a coordenada Y do destino:'), nl,
+                 read(_Y), nl,
+                 (move(T, Peca, _X, _Y, T2) -> (nl, display_game(T2), play_1v1(T2, n));
+                 (write('Jogada invalida. Vamos tentar outra vez.'), nl,
+                 play_1v1(T, u))));
+                 (write('Peca invalida. Vamos tentar outra vez.'), nl,
+                 play_1v1(T, u))))).
+
+play_1v1(T, n):- nl, write('E a vez da equipa de rei "n" | 1 - prosseguir | 0 - sair'), nl,
+                 read(X), nl,
+                 ((X = 0, write('A sair'), nl);
+                 (X = 1, nl,
+                 write('Qual peca deseja mover?'), nl,
+                 read(_P), traduz_peca(_P, Peca),
+                 ((Peca = p; Peca = n; Peca = q) ->
+                 (write('Introduza a coordenada X do destino:'), nl,
+                 read(_X), nl,
+                 write('Introduza a coordenada Y do destino:'), nl,
+                 read(_Y), nl,
+                 (move(T, Peca, _X, _Y, T2) -> (nl, display_game(T2), play_1v1(T2, u));
+                 (write('Jogada invalida. Vamos tentar outra vez.'), nl,
+                 play_1v1(T, n))));
+                 (write('Peca invalida. Vamos tentar outra vez.'), nl,
+                 play_1v1(T, n))))).
 
 play_ai_1(T).
 play_ai_2(T).
+
+escolher_modo(T) :- write('1 - jogar 1v1 | 2 - jogar contra AI(nivel 1) | 3 - jogar contra AI(nivel 2) | 0 - sair'), nl,
+                    read(X), nl,
+                    (X = 1, play_1v1(T, u));
+                    (X = 2, play_ai_1(T));
+                    (X = 3, play_ai_2(T)).
 
 play :- initial_state(T), display_game(T), escolher_modo(T).
