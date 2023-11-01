@@ -76,6 +76,24 @@ value(T, 2, Value) :-
     value(T, 1, Value1),
     Value is -Value1.
 
+choose_move(T, Player, 2, Move) :-
+    valid_moves(T, Player, ListOfMoves),
+    choose_move_aux(T, Player, ListOfMoves, -101, [], Value, Move).
+
+choose_move_aux(T, Player, [], Value, Move, Value, Move).
+choose_move_aux(T, Player, [Head | Remainder], CurrValue, CurrMove, Value, Move) :-
+    Head = [PieceToMove, ListCoord],
+    choose_move_aux_aux(T, Player, PieceToMove, ListCoord, CurrValue, CurrMove, CalculatedMove, CalculatedValue), 
+    choose_move_aux(T, Player, Remainder, CalculatedValue, CalculatedMove, Value, Move).
+
+choose_move_aux_aux(T, Player, PieceToMove, [], Value, Move, Value, Move).
+choose_move_aux_aux(T, Player, PieceToMove, [X-Y | Remainder], CurrValue, CurrMove, Value, Move) :-
+    move(T, PieceToMove, X, Y, T1),
+    value(T1, Player, CalculatedValue),
+    CurrValue < CalculatedValue,
+    choose_move_aux_aux(T, Player, PieceToMove, Remainder, ListOfMoves, CalculatedValue, [PieceToMove, X-Y], Value, Move).
+choose_move_aux_aux(T, Player, PieceToMove, [X-Y | Remainder], CurrValue, CurrMove, Value, Move) :-
+    choose_move_aux_aux(T, Player, PieceToMove, Remainder, ListOfMoves, CurrValue, CurrMove, Value, Move).
 
 :- op(1000, xfy, e).
 :- op(1200, xfx, se).
