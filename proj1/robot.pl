@@ -1,9 +1,11 @@
-steps_between_pieces(T, PieceToMove, Xf-Yf, NumberOfSteps) :-
+steps_between_pieces(T, PieceToMove, EndCoord, NumberOfSteps) :-
     PieceToMove esta_em Xi-Yi no_tabuleiro T,
-    steps_between_pieces(T, PieceToMove, [Xi-Yi], [Xi-Yi], [0], NumberOfSteps, Xf-Yf), !.
+    not(check_all_invalid(T, EndCoord)),
+    steps_between_pieces(T, PieceToMove, [Xi-Yi], [Xi-Yi], [0], NumberOfSteps, EndCoord), !.
 % steps_between_pieces(Tabuleiro, PieceToMove, Queue, Visited, NumberOfStepsList, TotalNumberOfSteps, EndCoordinates).
-steps_between_pieces(T, PieceToMove, [XHead-YHead | Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, Xf-Yf) :-
-    XHead = Xf, YHead = Yf, TotalNumberOfSteps is CurrentNumberOfSteps, !.
+steps_between_pieces(T, PieceToMove, [XHead-YHead | Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, EndCoord) :-
+    memberchk(XHead-YHead, EndCoord), TotalNumberOfSteps is CurrentNumberOfSteps, !.
+
 steps_between_pieces(T, PieceToMove, [HeadCoord|Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, EndCoord) :-
     setof(Coord,
     ( posso_mover_aux(T, PieceToMove, HeadCoord, Coord),
@@ -20,11 +22,19 @@ steps_between_pieces(T, PieceToMove, [HeadCoord|Remainder], Visited, [CurrentNum
     steps_between_pieces(T, PieceToMove, NewRemainder, NewVisited, NewRestList, TotalNumberOfSteps, EndCoord), !.
 
 steps_between_pieces(T, PieceToMove, [HeadCoord|Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, EndCoord) :-
-    write(HeadCoord), nl,
     steps_between_pieces(T, PieceToMove, Remainder, Visited, RestList, TotalNumberOfSteps, EndCoord), !.
 
 build_list(X, N, List)  :- 
     findall(X, between(1, N, _), List).
+
+check_all_invalid(T, []).
+check_all_invalid(T, [HeadCoord | Remainder]) :-
+    Peca esta_em HeadCoord no_tabuleiro T,
+    Peca = -1,
+    check_all_invalid(T, Remainder).
+check_all_invalid(T, [X-Y | Remainder]) :-
+    (X < 1; X > 7; Y < 1; Y > 7),
+    check_all_invalid(T, Remainder).
 
 valid_moves(T, Player, ListOfMoves) :- 
     Player is 1,
@@ -40,13 +50,32 @@ valid_moves(T, Player, ListOfMoves) :-
     setof(Xf-Yf, posso_mover(T, d, Xf, Yf), DListOfMoves),
     ListOfMoves = [[u, UListOfMoves], [b, BListOfMoves], [d, DListOfMoves]].
 
-
-value(T, PieceToMove, Xf-Yf, Value) :-
-    steps_between_pieces(T, PieceToMove, Xf-Yf, NumberOfSteps),
+value(T, PieceToMove, ListCoord, Value) :-
+    steps_between_pieces(T, PieceToMove, ListCoord, NumberOfSteps),
     Value is 1 / NumberOfSteps.
-value(T, PieceToMove, Xf-Yf, 0).
+value(T, PieceToMove, ListCoord, 0).
 
-value(T)
+value(T, Player, Value) :-
+    Player is 1,
+    u esta_em Xu-Yu no_tabuleiro T,
+    n esta_em Xn-Yn no_tabuleiro T,
+    value(T, p, [Xu-Yu], PValue),
+    value(T, q, [Xu-Yu], QValue),
+    value(T, b, [Xn-Yn], BValue),
+    value(T, d, [Xn-Yn], DValue),
+    Value is PValue + QValue - BValue - DValue.
+
+value(T, Player, Value) :-
+    Player is 2,
+    n esta_em Xn-Yn no_tabuleiro T,
+    u esta_em Xu-Yu no_tabuleiro T,
+    value(T, b, [Xn-Yn], BValue),
+    value(T, d, [Xn-Yn], DValue),
+    value(T, p, [Xu-Yu], PValue),
+    value(T, q, [Xu-Yu], QValue),
+    Value is BValue + DValue - PValue - QValue.
+
+
 
 :- op(1000, xfy, e).
 :- op(1200, xfx, se).
@@ -115,6 +144,6 @@ posso_mover_aux(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- Xi-Yi = Xf-Yf.
 posso_mover_aux(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- NumberStepsLeft > 0,
                                                       mover_um_na_direcao(Xi-Yi, Xi1-Yi1, Dir),
                                                       PecaDestino esta_em Xi1-Yi1 no_tabuleiro T,
-                                                    ((PecaDestino = -1, posso_mover(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft));
-                                                     (PecaDestino = 0, posso_mover(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft - 1));
-                                                     posso_mover(T, Xi1-Yi1, Xf-Yf, Dir, 0)).
+                                                    ((PecaDestino = -1, posso_mover_aux(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft));
+                                                     (PecaDestino = 0, posso_mover_aux(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft - 1));
+                                                     posso_mover_aux(T, Xi1-Yi1, Xf-Yf, Dir, 0)).
