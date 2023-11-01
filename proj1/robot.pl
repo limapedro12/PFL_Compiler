@@ -1,79 +1,15 @@
-:-use_module(library(lists)).
+steps_between_pieces(T, PieceToMove, Xf-Yf, NumberOfSteps) :-
+    PieceToMove esta_em Xi-Yi no_tabuleiro T,
+    steps_between_pieces(T, PieceToMove, [Xi-Yi], [Xi-Yi], [0], NumberOfSteps, Xf-Yf), !.
+% steps_between_pieces(Tabuleiro, PieceToMove, Queue, Visited, NumberOfStepsList, TotalNumberOfSteps, EndCoordinates).
+steps_between_pieces(T, PieceToMove, [XHead-YHead | Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, Xf-Yf) :-
+    XHead = Xf, YHead = Yf, TotalNumberOfSteps is CurrentNumberOfSteps, !.
+steps_between_pieces(T, PieceToMove, [HeadCoord|Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, EndCoord) :-
+    setof(Coord,
+    ( posso_mover_aux(T, PieceToMove, HeadCoord, Coord),
+    not(member(Coord, Visited))), FoundList),
 
-not(X) :- X, !, fail.
-not(_X).
-
-connects_bfs(S, F):-
-    connects_bfs([S], F, [S]).
-
-% connects_bfs(Queue, Final, Visited).
-connects_bfs([F|_], F, _V).
-connects_bfs([S|R], F, V):-
-    findall(N,
-    ( connected(S, N),
-    not(member(N, V)),
-    not(member(N, [S|R]))), L),
-    append(R, L, NR),
-    connects_bfs(NR, F, [S|V]).
-
-connected(1, 2).
-connected(1, 3).
-connected(1, 4).
-connected(2, 3).
-connected(2, 5).
-connected(3, 4).
-connected(5, 6).
-
-my_bfs(StartingNode) :-
-    my_bfs([StartingNode], [StartingNode]).
-% my_bfs(Queue, Visited).
-my_bfs([], _V).
-my_bfs([Head|Remainder], Visited) :-
-    write(Head), nl,
-    findall(Node,
-    ( connected(Head, Node),
-    not(member(Node, Visited))), FoundList),
-    append(Visited, FoundList, NewVisited),
-    append(Remainder, FoundList, NewRemainder),
-    my_bfs(NewRemainder, NewVisited).
-
-path(StartingNode, EndNode, ResultingPath) :-
-    path([StartingNode], [StartingNode], [[StartingNode]], ResultingPath, EndNode).
-% path(Queue, Visited, PreviousPaths, ResultingPath, EndNode).
-path([], _V, _P, [], _E).
-path([Head|Remainder], Visited, [PreviousPath|_R], ResultingPath, EndNode) :-
-    Head = EndNode, reverse(PreviousPath, ResultingPath).
-path([Head|Remainder], Visited, [PreviousPath|PathsRemainder], ResultingPath, EndNode) :-
-    write(Head), nl,
-    findall(Node,
-    ( connected(Head, Node),
-    not(member(Node, Visited))), FoundList),
-
-    append(Visited, FoundList, NewVisited),
-    append(Remainder, FoundList, NewRemainder),
-
-    add_the_begining(FoundList, PreviousPath, NewPreviousPath),
-    append(PathsRemainder, NewPreviousPath, NewPathsRemainder),
-
-    path(NewRemainder, NewVisited, NewPathsRemainder, ResultingPath, EndNode).
-
-add_the_begining([], ListToAppend, []).
-add_the_begining([Head | Rest], ListToAppend, [HeadList | RestLists]) :-
-    HeadList = [Head|ListToAppend],
-    add_the_begining(Rest, ListToAppend, RestLists).
-
-number_of_steps(StartingNode, EndNode, NumberOfSteps) :-
-    number_of_steps([StartingNode], [StartingNode], [0], NumberOfSteps, EndNode).
-% number_of_steps(Queue, Visited, NumberOfStepsList, TotalNumberOfSteps, EndNode).
-number_of_steps([Head|Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, EndNode) :-
-    Head = EndNode, TotalNumberOfSteps is CurrentNumberOfSteps.
-number_of_steps([Head|Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, EndNode) :-
-    write(Head), nl,
-    findall(Node,
-    ( connected(Head, Node),
-    not(member(Node, Visited))), FoundList),
-
-    append(Visited, FoundList, NewVisited),
+    append(FoundList, Visited, NewVisited),
     append(Remainder, FoundList, NewRemainder),
 
     NewCurrentNumberOfSteps is CurrentNumberOfSteps + 1,
@@ -81,10 +17,36 @@ number_of_steps([Head|Remainder], Visited, [CurrentNumberOfSteps | RestList], To
     build_list(NewCurrentNumberOfSteps, Size, NewCurrentNumberOfStepsList),
     append(RestList, NewCurrentNumberOfStepsList, NewRestList),
 
-    number_of_steps(NewRemainder, NewVisited, NewRestList, TotalNumberOfSteps, EndNode).
-    
+    steps_between_pieces(T, PieceToMove, NewRemainder, NewVisited, NewRestList, TotalNumberOfSteps, EndCoord), !.
+
+steps_between_pieces(T, PieceToMove, [HeadCoord|Remainder], Visited, [CurrentNumberOfSteps | RestList], TotalNumberOfSteps, EndCoord) :-
+    write(HeadCoord), nl,
+    steps_between_pieces(T, PieceToMove, Remainder, Visited, RestList, TotalNumberOfSteps, EndCoord), !.
+
 build_list(X, N, List)  :- 
     findall(X, between(1, N, _), List).
+
+valid_moves(T, Player, ListOfMoves) :- 
+    Player is 1,
+    setof(Xf-Yf, posso_mover(T, n, Xf, Yf), NListOfMoves),
+    setof(Xf-Yf, posso_mover(T, p, Xf, Yf), PListOfMoves),
+    setof(Xf-Yf, posso_mover(T, q, Xf, Yf), QListOfMoves),
+    ListOfMoves = [[n, NListOfMoves], [p, PListOfMoves], [q, QListOfMoves]].
+
+valid_moves(T, Player, ListOfMoves) :-
+    Player is 2,
+    setof(Xf-Yf, posso_mover(T, u, Xf, Yf), UListOfMoves),
+    setof(Xf-Yf, posso_mover(T, b, Xf, Yf), BListOfMoves),
+    setof(Xf-Yf, posso_mover(T, d, Xf, Yf), DListOfMoves),
+    ListOfMoves = [[u, UListOfMoves], [b, BListOfMoves], [d, DListOfMoves]].
+
+
+value(T, PieceToMove, Xf-Yf, Value) :-
+    steps_between_pieces(T, PieceToMove, Xf-Yf, NumberOfSteps),
+    Value is 1 / NumberOfSteps.
+value(T, PieceToMove, Xf-Yf, 0).
+
+value(T)
 
 :- op(1000, xfy, e).
 :- op(1200, xfx, se).
@@ -139,16 +101,18 @@ mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = noroeste, Xf is Xi - 1, Yf is Yi
 mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = sudeste, Xf is Xi + 1, Yf is Yi + 1.
 mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = sudoeste, Xf is Xi - 1, Yf is Yi + 1.
 
-posso_mover(T, Peca, Xf, Yf) :- Peca esta_em Xi-Yi no_tabuleiro T,
-                                PecaDestino esta_em Xf-Yf no_tabuleiro T,
-                                PecaDestino \= -1, 
-                                direcao(Xi-Yi, Xf-Yf, Dir),
-                             ((Peca ser_guerreiro, posso_mover(T, Xi-Yi, Xf-Yf, Dir, 2));
-                              (Peca ser_rei, posso_mover(T, Xi-Yi, Xf-Yf, Dir, 1))),
-                               Xf-Yf ser_valido.
+posso_mover_aux(T, Peca, Xi-Yi, Xf-Yf) :- PecaDestino esta_em Xf-Yf no_tabuleiro T,
+                                          PecaDestino \= -1, 
+                                          direcao(Xi-Yi, Xf-Yf, Dir), 
+                                        ((Peca ser_guerreiro, posso_mover_aux(T, Xi-Yi, Xf-Yf, Dir, 2));
+                                         (Peca ser_rei, posso_mover_aux(T, Xi-Yi, Xf-Yf, Dir, 1))),
+                                          Xf-Yf ser_valido.
 
-posso_mover(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- Xi-Yi = Xf-Yf.
-posso_mover(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- NumberStepsLeft > 0,
+posso_mover(T, Peca, Xf, Yf) :- Peca esta_em Xi-Yi no_tabuleiro T,
+                                posso_mover_aux(T, Peca, Xi-Yi, Xf-Yf).
+
+posso_mover_aux(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- Xi-Yi = Xf-Yf.
+posso_mover_aux(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- NumberStepsLeft > 0,
                                                       mover_um_na_direcao(Xi-Yi, Xi1-Yi1, Dir),
                                                       PecaDestino esta_em Xi1-Yi1 no_tabuleiro T,
                                                     ((PecaDestino = -1, posso_mover(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft));
