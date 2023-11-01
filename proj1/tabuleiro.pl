@@ -182,6 +182,32 @@ play_1_ai_1(T, c):- nl, write('O computador jogara agora...'), nl,
                     write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                     nl, display_game(T2), play_1_ai_1(T2, h).
 
+play_1_ai_2(T, _):- final(T), !.
+
+play_1_ai_2(T, h):- nl, write('E a sua vez de jogar | 1 - prosseguir | 0 - sair'), nl,
+                    read(O), nl,
+                    ((O = 0), write('A sair...'), nl);
+                    (O = 1, nl,
+                    write('Qual peca deseja mover?'), nl,
+                    read(P), traduz_peca(P, Peca),
+                    ((Peca = b; Peca = u; Peca = d) ->
+                    (write('Introduza a coordenada X do destino:'), nl,
+                    read(X), nl,
+                    write('Introduza a coordenada Y do destino:'), nl,
+                    read(Y), nl,
+                    (move(T, Peca, X, Y, T2) -> (nl, display_game(T2), play_1_ai_2(T2, c));
+                    (write('Jogada invalida. Vamos tentar outra vez.'), nl,
+                    play_1_ai_2(T, h))));
+                    (write('Peca invalida. Vamos tentar outra vez.'), nl,
+                    play_1_ai_2(T, h)))).
+
+play_1_ai_2(T, c):- nl, write('O computador jogara agora...'), nl,
+                    sleep(2),
+                    choose_move(T, Peca, 2, preto, Xf-Yf),
+                    move(T, Peca, Xf, Yf, T2),
+                    write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
+                    nl, display_game(T2), play_1_ai_2(T2, h).
+
 play_ai_ai_1(T, _):- final(T), !.
 
 play_ai_ai_1(T, u):- nl, write('A equipa de reu "u" jogara agora...'), nl,
@@ -198,6 +224,22 @@ play_ai_ai_1(T, n):- nl, write('A equipa de reu "n" jogara agora...'), nl,
                      write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                      nl, display_game(T2), play_ai_ai_1(T2, u).
 
+play_ai_ai_2(T, _):- final(T), !.
+
+play_ai_ai_2(T, u):- nl, write('A equipa de rei "u" jogara agora...'), nl,
+                     sleep(2),
+                     choose_move(T, Peca, 2, branco, Xf-Yf),
+                     move(T, Peca, Xf, Yf, T2),
+                     write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
+                     nl, display_game(T2), play_ai_ai_2(T2, n).
+
+play_ai_ai_2(T, n):- nl, write('A equipa de rei "n" jogara agora...'), nl,
+                     sleep(2),
+                     choose_move(T, Peca, 2, preto, Xf-Yf),
+                     move(T, Peca, Xf, Yf, T2),
+                     write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
+                     nl, display_game(T2), play_ai_ai_2(T2, u).
+
 escolher_modo(T) :- write('1 - jogar 1v1 | 2 - jogar contra IA (nivel 1) | 3 - jogar contra IA (nivel 2) | 4 - IA vs IA (nivel 1) | 5 - IA vs IA (nivel 2) | 0 - sair'), nl,
                     read(X), nl,
                     ((X = 0, write('A sair...'), nl);
@@ -205,8 +247,8 @@ escolher_modo(T) :- write('1 - jogar 1v1 | 2 - jogar contra IA (nivel 1) | 3 - j
                     (X = 2, write('A sua equipa tem "u" como rei e "b" e "d" como guerreiros'),
                     play_1_ai_1(T, h));
                     (X = 3, write('A sua equipa tem "u" como rei e "b" e "d" como guerreiros'),
-                    play_1_ai_2(T));
+                    play_1_ai_2(T, h));
                     (X = 4, play_ai_ai_1(T, u));
-                    (X = 5, play_ai_ai_2(T))).
+                    (X = 5, play_ai_ai_2(T, u))).
 
 play :- initial_state(T), display_game(T), escolher_modo(T).
