@@ -55,8 +55,15 @@ value(T, PieceToMove, ListCoord, Value) :-
     Value is 1 / NumberOfSteps.
 value(T, PieceToMove, ListCoord, 0).
 
-value(T, Player, Value) :-
-    Player is 1,
+value(T, 1, Value) :- 
+    not(u esta_em Xu-Yu no_tabuleiro T),
+    Value is 100.
+
+value(T, 1, Value) :-
+    not(n esta_em Xn-Yn no_tabuleiro T),
+    Value is -100.
+
+value(T, 1, Value) :-
     u esta_em Xu-Yu no_tabuleiro T,
     n esta_em Xn-Yn no_tabuleiro T,
     value(T, p, [Xu-Yu], PValue),
@@ -65,16 +72,9 @@ value(T, Player, Value) :-
     value(T, d, [Xn-Yn], DValue),
     Value is PValue + QValue - BValue - DValue.
 
-value(T, Player, Value) :-
-    Player is 2,
-    n esta_em Xn-Yn no_tabuleiro T,
-    u esta_em Xu-Yu no_tabuleiro T,
-    value(T, b, [Xn-Yn], BValue),
-    value(T, d, [Xn-Yn], DValue),
-    value(T, p, [Xu-Yu], PValue),
-    value(T, q, [Xu-Yu], QValue),
-    Value is BValue + DValue - PValue - QValue.
-
+value(T, 2, Value) :-
+    value(T, 1, Value1),
+    Value is -Value1.
 
 
 :- op(1000, xfy, e).

@@ -8,9 +8,9 @@
 initial_state(T) :- T = [[0, 0, 0, 0, 0, 0, 0],
                          [0, p, 0, n, 0, q, 0],
                          [0, -1, 0, 0, 0, 0, 0],
+                         [0, b, 0, 0, 0, 0, 0],
                          [0, -1, 0, 0, 0, 0, 0],
-                         [0, -1, 0, 0, 0, 0, 0],
-                         [0, b, 0, u, 0, d, 0],
+                         [0, 0, 0, u, 0, d, 0],
                          [0, 0, 0, 0, 0, 0, 0]].
 
 substituir(Pos, List, NewElem, ListFinal, OldElem) :- nth1(Pos, List, OldElem, R),
