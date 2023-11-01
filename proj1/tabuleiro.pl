@@ -113,11 +113,12 @@ traduz_peca('d', d).
 traduz_peca('u', u).
 traduz_peca(_, inv).
 
-choose_move(T, Peca, Nivel, Equipa, Xf-Yf):- Nivel = 1,
-                                             valid_moves(T, Equipa, L),
-                                             random_select(M, L, _R),
-                                             nth0(0, M, Peca),
-                                             nth0(1, M, Xf-Yf).
+choose_move(T, Peca, 1, Equipa, Xf-Yf):- valid_moves(T, Equipa, L),
+                                         random_select(M, L, _R),
+                                         nth0(0, M, Peca),
+                                         nth0(1, M, Xf-Yf).
+
+%choose_move(T, Peca, 2, Equipa, Xf-Yf):- para aqui viria a escolha inteligente...
 
 play_1v1(T, _):- final(T), !.
 
@@ -181,6 +182,22 @@ play_1_ai_1(T, c):- nl, write('O computador jogara agora...'), nl,
                     write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                     nl, display_game(T2), play_1_ai_1(T2, h).
 
+play_ai_ai_1(T, _):- final(T), !.
+
+play_ai_ai_1(T, u):- nl, write('A equipa de reu "u" jogara agora...'), nl,
+                     sleep(2),
+                     choose_move(T, Peca, 1, branco, Xf-Yf),
+                     move(T, Peca, Xf, Yf, T2),
+                     write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
+                     nl, display_game(T2), play_ai_ai_1(T2, n).
+
+play_ai_ai_1(T, n):- nl, write('A equipa de reu "n" jogara agora...'), nl,
+                     sleep(2),
+                     choose_move(T, Peca, 1, preto, Xf-Yf),
+                     move(T, Peca, Xf, Yf, T2),
+                     write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
+                     nl, display_game(T2), play_ai_ai_1(T2, u).
+
 escolher_modo(T) :- write('1 - jogar 1v1 | 2 - jogar contra IA (nivel 1) | 3 - jogar contra IA (nivel 2) | 4 - IA vs IA (nivel 1) | 5 - IA vs IA (nivel 2) | 0 - sair'), nl,
                     read(X), nl,
                     ((X = 0, write('A sair...'), nl);
@@ -189,7 +206,7 @@ escolher_modo(T) :- write('1 - jogar 1v1 | 2 - jogar contra IA (nivel 1) | 3 - j
                     play_1_ai_1(T, h));
                     (X = 3, write('A sua equipa tem "u" como rei e "b" e "d" como guerreiros'),
                     play_1_ai_2(T));
-                    (X = 4, play_ai_ai_1(T));
+                    (X = 4, play_ai_ai_1(T, u));
                     (X = 5, play_ai_ai_2(T))).
 
 play :- initial_state(T), display_game(T), escolher_modo(T).
