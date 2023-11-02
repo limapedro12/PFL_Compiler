@@ -123,7 +123,13 @@ value(T, branco, Value) :-
 choose_move(T, Equipa, 1, [Peca, Xf-Yf]):- valid_moves(T, Equipa, L),
                                            random_select(M, L, _R),
                                            nth0(0, M, Peca),
-                                           nth0(1, M, Xf-Yf).
+                                           nth0(1, M, Xf-Yf),
+                                           verify_suicide(T, Equipa, Xf-Yf).
+choose_move(T, Equipa, 1, Move) :- choose_move(T, Equipa, 1, Move).
+
+verify_suicide(T, preto, Xf-Yf) :- not((n esta_em Xf-Yf no_tabuleiro T; p esta_em Xf-Yf no_tabuleiro T; q esta_em Xf-Yf no_tabuleiro T)).
+verify_suicide(T, branco, Xf-Yf) :- not((u esta_em Xf-Yf no_tabuleiro T; b esta_em Xf-Yf no_tabuleiro T; d esta_em Xf-Yf no_tabuleiro T)).
+
 
 choose_move(T, Player, 2, Move) :-
     valid_moves(T, Player, ListOfMoves),
