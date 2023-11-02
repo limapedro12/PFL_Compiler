@@ -113,11 +113,6 @@ traduz_peca('d', d).
 traduz_peca('u', u).
 traduz_peca(_, inv).
 
-choose_move(T, Peca, 1, Equipa, Xf-Yf):- valid_moves(T, Equipa, L),
-                                         random_select(M, L, _R),
-                                         nth0(0, M, Peca),
-                                         nth0(1, M, Xf-Yf).
-
 %choose_move(T, Peca, 2, Equipa, Xf-Yf):- para aqui viria a escolha inteligente...
 
 play_1v1(T, _):- final(T), !.
@@ -177,7 +172,7 @@ play_1_ai_1(T, h):- nl, write('E a sua vez de jogar | 1 - prosseguir | 0 - sair'
 
 play_1_ai_1(T, c):- nl, write('O computador jogara agora...'), nl,
                     sleep(2),
-                    choose_move(T, Peca, 1, preto, Xf-Yf),
+                    choose_move(T, preto, 1, [Peca,Xf-Yf]),
                     move(T, Peca, Xf, Yf, T2),
                     write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                     nl, display_game(T2), play_1_ai_1(T2, h).
@@ -203,7 +198,11 @@ play_1_ai_2(T, h):- nl, write('E a sua vez de jogar | 1 - prosseguir | 0 - sair'
 
 play_1_ai_2(T, c):- nl, write('O computador jogara agora...'), nl,
                     sleep(2),
-                    choose_move(T, Peca, 2, preto, Xf-Yf),
+                    write('lalala'), 
+                    choose_move(T, preto, 2, [Peca,Xf-Yf]),
+                    write('pum'),
+                    write([Peca,Xf-Yf]), nl,
+                    write('lalala'),
                     move(T, Peca, Xf, Yf, T2),
                     write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                     nl, display_game(T2), play_1_ai_2(T2, h).
@@ -212,14 +211,14 @@ play_ai_ai_1(T, _):- final(T), !.
 
 play_ai_ai_1(T, u):- nl, write('A equipa de reu "u" jogara agora...'), nl,
                      sleep(2),
-                     choose_move(T, Peca, 1, branco, Xf-Yf),
+                     choose_move(T, branco, 1, [Peca,Xf-Yf]),
                      move(T, Peca, Xf, Yf, T2),
                      write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                      nl, display_game(T2), play_ai_ai_1(T2, n).
 
 play_ai_ai_1(T, n):- nl, write('A equipa de reu "n" jogara agora...'), nl,
                      sleep(2),
-                     choose_move(T, Peca, 1, preto, Xf-Yf),
+                     choose_move(T, preto, 1, [Peca,Xf-Yf]),
                      move(T, Peca, Xf, Yf, T2),
                      write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                      nl, display_game(T2), play_ai_ai_1(T2, u).
@@ -228,14 +227,14 @@ play_ai_ai_2(T, _):- final(T), !.
 
 play_ai_ai_2(T, u):- nl, write('A equipa de rei "u" jogara agora...'), nl,
                      sleep(2),
-                     choose_move(T, Peca, 2, branco, Xf-Yf),
+                     choose_move(T, branco, 2, [Peca,Xf-Yf]),
                      move(T, Peca, Xf, Yf, T2),
                      write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                      nl, display_game(T2), play_ai_ai_2(T2, n).
 
 play_ai_ai_2(T, n):- nl, write('A equipa de rei "n" jogara agora...'), nl,
                      sleep(2),
-                     choose_move(T, Peca, 2, preto, Xf-Yf),
+                     choose_move(T, preto, 2, [Peca,Xf-Yf]),
                      move(T, Peca, Xf, Yf, T2),
                      write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                      nl, display_game(T2), play_ai_ai_2(T2, u).

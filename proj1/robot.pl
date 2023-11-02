@@ -107,6 +107,11 @@ value(T, branco, Value) :-
     value(T, 1, Value1),
     Value is -Value1.
 
+choose_move(T, Equipa, 1, [Peca, Xf-Yf]):- valid_moves(T, Equipa, L),
+                                           random_select(M, L, _R),
+                                           nth0(0, M, Peca),
+                                           nth0(1, M, Xf-Yf).
+
 choose_move(T, Player, 2, Move) :-
     valid_moves(T, Player, ListOfMoves),
     write(ListOfMoves), nl,
