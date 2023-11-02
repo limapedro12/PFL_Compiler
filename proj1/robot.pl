@@ -66,13 +66,19 @@ value(T, preto, Value) :-
     not(n esta_em Xn-Yn no_tabuleiro T),
     Value is -100, !.
 
+% print_p44(T) :-
+%     p esta_em 4-4 no_tabuleiro T,
+%     display_game(T).
+
+% print_p44(_T).
+
 value(T, preto, Value) :- 
     n esta_em Xn-Yn no_tabuleiro T,
     valid_moves(T, branco, ListOfMoves),
     % se n esta em movimentos validos, entao o valor deve ser -90
+    memberchk([_, Xn-Yn], ListOfMoves),
     write('n: '), write(Xn-Yn), nl,
     write(ListOfMoves), nl,
-    memberchk([_, Xn-Yn], ListOfMoves),
     Value is -90, !.
 
 value(T, preto, Value) :-
