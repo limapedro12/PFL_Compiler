@@ -183,6 +183,14 @@ traduz_peca(_, inv).
 
 %choose_move(T, Peca, 2, Equipa, Xf-Yf):- para aqui viria a escolha inteligente...
 
+check_check(T, preto):- n esta_em X-Y no_tabuleiro T, 
+                        valid_moves(T, branco, L), memberchk([_, X-Y], L),
+                        write('Rei "n" em check!'), nl.
+
+check_check(T, branco):- u esta_em X-Y no_tabuleiro T,
+                         valid_moves(T, preto, L), memberchk([_, X-Y], L),
+                         write('Rei "u" em check!'), nl.
+
 play_1v1(T, _):- final(T), !.
 
 play_1v1(T, u):- nl, write('E a vez da equipa de rei "u" | 1 - prosseguir | 0 - sair'), nl,
