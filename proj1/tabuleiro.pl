@@ -197,12 +197,9 @@ play_1_ai_2(T, h):- nl, write('E a sua vez de jogar | 1 - prosseguir | 0 - sair'
                     play_1_ai_2(T, h)))).
 
 play_1_ai_2(T, c):- nl, write('O computador jogara agora...'), nl,
-                    sleep(2),
-                    write('lalala'), 
+                    % sleep(2),
                     choose_move(T, preto, 2, [Peca,Xf-Yf]),
-                    write('pum'),
                     write([Peca,Xf-Yf]), nl,
-                    write('lalala'),
                     move(T, Peca, Xf, Yf, T2),
                     write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                     nl, display_game(T2), play_1_ai_2(T2, h).

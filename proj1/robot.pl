@@ -66,26 +66,26 @@ value(T, preto, Value) :-
     not(n esta_em Xn-Yn no_tabuleiro T),
     Value is -100, !.
 
-% print_p44(T) :-
-%     p esta_em 4-4 no_tabuleiro T,
-%     display_game(T).
+print_q44(T) :-
+    q esta_em 4-4 no_tabuleiro T,
+    not(p esta_em 2-2 no_tabuleiro T),
+    display_game(T), 
+    trace.
 
-% print_p44(_T).
+print_q44(_T).
 
 value(T, preto, Value) :- 
     n esta_em Xn-Yn no_tabuleiro T,
     valid_moves(T, branco, ListOfMoves),
     % se n esta em movimentos validos, entao o valor deve ser -90
     memberchk([_, Xn-Yn], ListOfMoves),
-    write('n: '), write(Xn-Yn), nl,
-    write(ListOfMoves), nl,
+    % write('n: '), write(Xn-Yn), nl,
+    % write(ListOfMoves), nl,
     Value is -90, !.
 
 value(T, preto, Value) :-
     u esta_em Xu-Yu no_tabuleiro T,
     n esta_em Xn-Yn no_tabuleiro T,
-    p esta_em Xp-Yp no_tabuleiro T,
-    q esta_em Xq-Yq no_tabuleiro T,
 
     value(T, p, [Xu-Yu], PValue),
     value(T, q, [Xu-Yu], QValue),
@@ -94,12 +94,13 @@ value(T, preto, Value) :-
 
     valid_moves(T, branco, ListOfMoves),
     % se p e q estao em movimentos validos, entao o valor o maximo entre os dois deve ser retirado
-    ((memberchk([_, Xp-Yp], ListOfMoves), memberchk([_, Xq-Yq], ListOfMoves), 
+    ((p esta_em Xp-Yp no_tabuleiro T, q esta_em Xq-Yq no_tabuleiro T,
+      memberchk([_, Xp-Yp], ListOfMoves), memberchk([_, Xq-Yq], ListOfMoves), 
       min(PValue, QValue, MinValue), Value is MinValue - BValue - DValue);
     % se apenas p esta em movimentos validos, entao o valor de p deve ser retirado
-     (memberchk([_, Xp-Yp], ListOfMoves), Value is PValue - BValue - DValue);
+     (p esta_em Xp-Yp no_tabuleiro T, memberchk([_, Xp-Yp], ListOfMoves), Value is PValue - BValue - DValue);
     % se apenas q esta em movimentos validos, entao o valor de q deve ser retirado
-     (memberchk([_, Xq-Yq], ListOfMoves), Value is QValue - BValue - DValue);
+     (q esta_em Xq-Yq no_tabuleiro T, memberchk([_, Xq-Yq], ListOfMoves), Value is QValue - BValue - DValue);
     % se nenhum esta em movimentos validos
      (Value is PValue + QValue - BValue - DValue)), !.
 
@@ -114,16 +115,17 @@ choose_move(T, Equipa, 1, [Peca, Xf-Yf]):- valid_moves(T, Equipa, L),
 
 choose_move(T, Player, 2, Move) :-
     valid_moves(T, Player, ListOfMoves),
-    write(ListOfMoves), nl,
+    % write(ListOfMoves), nl,
     choose_move_aux(T, Player, ListOfMoves, -101, [], Value, Move).
 
 choose_move_aux(T, Player, [], Value, Move, Value, Move) :- !.
 choose_move_aux(T, Player, [Head | Remainder], CurrValue, CurrMove, Value, Move) :-
     Head = [PieceToMove, X-Y],
-    write(Head), nl,
+    % write(Head), nl,
     move(T, PieceToMove, X, Y, T1),
+    % write('Move done'),
     value(T1, Player, CalculatedValue),
-    write('Value: '), write(CalculatedValue), nl,
+    % write('Value: '), write(CalculatedValue), nl,
     CurrValue < CalculatedValue,
     choose_move_aux(T, Player, Remainder, CalculatedValue, Head, Value, Move).
 choose_move_aux(T, Player, [Head | Remainder], CurrValue, CurrMove, Value, Move) :-
