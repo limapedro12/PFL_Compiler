@@ -48,8 +48,8 @@ move(T, Nome, Xf, Yf, T2) :- write('Movimento Invalido.'), nl, T = T2, fail.
 %valid_moves(T, branco, ListMoves) :- findall([Nome, Xf-Yf], (Nome ser_branco, procurar_peca(T, Nome, Xi, Yi), Nome pode_ir_para Xf-Yf no_tabuleiro T), ListMoves).
 %
 
-valid_moves(T, preto, L):- findall([Nome, Xf-Yf], (Nome ser_preto, procurar_peca(T, Nome, Xi, Yi), posso_mover(T, Nome, Xf, Yf)), L).
-valid_moves(T, branco, L):- findall([Nome, Xf-Yf], (Nome ser_branco, procurar_peca(T, Nome, Xi, Yi), posso_mover(T, Nome, Xf, Yf)), L).
+valid_moves(T, preto, L):- setof([Nome, Xf-Yf], (Nome ser_preto, procurar_peca(T, Nome, Xi, Yi), posso_mover(T, Nome, Xf, Yf)), L).
+valid_moves(T, branco, L):- setof([Nome, Xf-Yf], (Nome ser_branco, procurar_peca(T, Nome, Xi, Yi), posso_mover(T, Nome, Xf, Yf)), L).
 
 modulo(X, X) :- X >= 0.
 modulo(X, Y) :- Y is -X.

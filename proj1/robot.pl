@@ -36,15 +36,14 @@ check_all_invalid(T, [X-Y | Remainder]) :-
     (X < 1; X > 7; Y < 1; Y > 7),
     check_all_invalid(T, Remainder).
 
-valid_moves(T, Player, ListOfMoves) :- 
-    Player is 1,
+valid_moves2(T, 1, ListOfMoves) :- 
+    write('valid_moves 1'), nl,
     setof(Xf-Yf, posso_mover(T, n, Xf, Yf), NListOfMoves),
     setof(Xf-Yf, posso_mover(T, p, Xf, Yf), PListOfMoves),
     setof(Xf-Yf, posso_mover(T, q, Xf, Yf), QListOfMoves),
     ListOfMoves = [[n, NListOfMoves], [p, PListOfMoves], [q, QListOfMoves]].
 
-valid_moves(T, Player, ListOfMoves) :-
-    Player is 2,
+valid_moves2(T, 2, ListOfMoves) :-
     setof(Xf-Yf, posso_mover(T, u, Xf, Yf), UListOfMoves),
     setof(Xf-Yf, posso_mover(T, b, Xf, Yf), BListOfMoves),
     setof(Xf-Yf, posso_mover(T, d, Xf, Yf), DListOfMoves),
@@ -77,13 +76,13 @@ value(T, 2, Value) :-
     Value is -Value1.
 
 choose_move(T, Player, 2, Move) :-
-    valid_moves(T, Player, ListOfMoves),
+    valid_moves2(T, Player, ListOfMoves),
     choose_move_aux(T, Player, ListOfMoves, -101, [], Value, Move).
 
 choose_move_aux(T, Player, [], Value, Move, Value, Move).
 choose_move_aux(T, Player, [Head | Remainder], CurrValue, CurrMove, Value, Move) :-
     Head = [PieceToMove, ListCoord],
-    choose_move_aux_aux(T, Player, PieceToMove, ListCoord, CurrValue, CurrMove, CalculatedMove, CalculatedValue), 
+    choose_move_aux_aux(T, Player, PieceToMove, ListCoord, CurrValue, CurrMove, CalculatedValue, CalculatedMove), 
     choose_move_aux(T, Player, Remainder, CalculatedValue, CalculatedMove, Value, Move).
 
 choose_move_aux_aux(T, Player, PieceToMove, [], Value, Move, Value, Move).
@@ -91,9 +90,9 @@ choose_move_aux_aux(T, Player, PieceToMove, [X-Y | Remainder], CurrValue, CurrMo
     move(T, PieceToMove, X, Y, T1),
     value(T1, Player, CalculatedValue),
     CurrValue < CalculatedValue,
-    choose_move_aux_aux(T, Player, PieceToMove, Remainder, ListOfMoves, CalculatedValue, [PieceToMove, X-Y], Value, Move).
+    choose_move_aux_aux(T, Player, PieceToMove, Remainder, CalculatedValue, [PieceToMove, X-Y], Value, Move).
 choose_move_aux_aux(T, Player, PieceToMove, [X-Y | Remainder], CurrValue, CurrMove, Value, Move) :-
-    choose_move_aux_aux(T, Player, PieceToMove, Remainder, ListOfMoves, CurrValue, CurrMove, Value, Move).
+    choose_move_aux_aux(T, Player, PieceToMove, Remainder, CurrValue, CurrMove, Value, Move).
 
 :- op(1000, xfy, e).
 :- op(1200, xfx, se).
