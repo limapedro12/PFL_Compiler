@@ -1,3 +1,18 @@
+:- op(1000, xfy, e).
+:- op(1200, xfx, se).
+
+X e Y :- X, Y.
+X se Y.
+:- op(600, xfy, esta_em).
+:- op(570, xfy, no_tabuleiro).
+:- op(600, xfy, pode_ir_para).
+:- op(560, xf, ser_rei).
+:- op(560, xf, ser_guerreiro).
+:- op(560, xf, ser_peca).
+:- op(560, xf, ser_valido).
+:- op(560, xf, ser_preto).
+:- op(560, xf, ser_branco).
+
 steps_between_pieces(T, PieceToMove, EndCoord, NumberOfSteps) :-
     PieceToMove esta_em Xi-Yi no_tabuleiro T,
     not(check_all_invalid(T, EndCoord)),
@@ -35,19 +50,8 @@ check_all_invalid(T, [HeadCoord | Remainder]) :-
 check_all_invalid(T, [X-Y | Remainder]) :-
     (X < 1; X > 7; Y < 1; Y > 7),
     check_all_invalid(T, Remainder).
-
-% valid_moves2(T, 1, ListOfMoves) :- 
-%     write('valid_moves 1'), nl,
-%     setof(Xf-Yf, posso_mover(T, n, Xf, Yf), NListOfMoves),
-%     setof(Xf-Yf, posso_mover(T, p, Xf, Yf), PListOfMoves),
-%     setof(Xf-Yf, posso_mover(T, q, Xf, Yf), QListOfMoves),
-%     ListOfMoves = [[n, NListOfMoves], [p, PListOfMoves], [q, QListOfMoves]].
-
-% valid_moves2(T, 2, ListOfMoves) :-
-%     setof(Xf-Yf, posso_mover(T, u, Xf, Yf), UListOfMoves),
-%     setof(Xf-Yf, posso_mover(T, b, Xf, Yf), BListOfMoves),
-%     setof(Xf-Yf, posso_mover(T, d, Xf, Yf), DListOfMoves),
-%     ListOfMoves = [[u, UListOfMoves], [b, BListOfMoves], [d, DListOfMoves]].
+min(X, Y, X) :- X < Y, !.
+min(X, Y, Y) :- X >= Y, !.
 
 value(T, PieceToMove, ListCoord, Value) :-
     steps_between_pieces(T, PieceToMove, ListCoord, NumberOfSteps),
@@ -58,28 +62,39 @@ value(T, preto, Value) :-
     not(u esta_em Xu-Yu no_tabuleiro T),
     Value is 100, !.
 
-min(X, Y, X) :- X < Y, !.
-min(X, Y, Y) :- X >= Y, !.
-
 value(T, preto, Value) :-
     not(n esta_em Xn-Yn no_tabuleiro T),
     Value is -100, !.
 
+value(T, preto, Value) :- 
+    n esta_em Xn-Yn no_tabuleiro T,
+    valid_moves(T, branco, ListOfMoves),
+    % se n esta em movimentos validos, entao o valor deve ser -90
+    write('n: '), write(Xn-Yn), nl,
+    write(ListOfMoves), nl,
+    memberchk([_, Xn-Yn], ListOfMoves),
+    Value is -90, !.
+
 value(T, preto, Value) :-
     u esta_em Xu-Yu no_tabuleiro T,
     n esta_em Xn-Yn no_tabuleiro T,
+    p esta_em Xp-Yp no_tabuleiro T,
+    q esta_em Xq-Yq no_tabuleiro T,
+
     value(T, p, [Xu-Yu], PValue),
     value(T, q, [Xu-Yu], QValue),
     value(T, b, [Xn-Yn], BValue),
     value(T, d, [Xn-Yn], DValue),
 
-    p esta_em Xp-Yp no_tabuleiro T,
-    q esta_em Xq-Yq no_tabuleiro T,
     valid_moves(T, branco, ListOfMoves),
+    % se p e q estao em movimentos validos, entao o valor o maximo entre os dois deve ser retirado
     ((memberchk([_, Xp-Yp], ListOfMoves), memberchk([_, Xq-Yq], ListOfMoves), 
       min(PValue, QValue, MinValue), Value is MinValue - BValue - DValue);
+    % se apenas p esta em movimentos validos, entao o valor de p deve ser retirado
      (memberchk([_, Xp-Yp], ListOfMoves), Value is PValue - BValue - DValue);
+    % se apenas q esta em movimentos validos, entao o valor de q deve ser retirado
      (memberchk([_, Xq-Yq], ListOfMoves), Value is QValue - BValue - DValue);
+    % se nenhum esta em movimentos validos
      (Value is PValue + QValue - BValue - DValue)), !.
 
 value(T, branco, Value) :-
@@ -88,13 +103,16 @@ value(T, branco, Value) :-
 
 choose_move(T, Player, 2, Move) :-
     valid_moves(T, Player, ListOfMoves),
+    write(ListOfMoves), nl,
     choose_move_aux(T, Player, ListOfMoves, -101, [], Value, Move).
 
 choose_move_aux(T, Player, [], Value, Move, Value, Move) :- !.
 choose_move_aux(T, Player, [Head | Remainder], CurrValue, CurrMove, Value, Move) :-
     Head = [PieceToMove, X-Y],
+    write(Head), nl,
     move(T, PieceToMove, X, Y, T1),
     value(T1, Player, CalculatedValue),
+    write('Value: '), write(CalculatedValue), nl,
     CurrValue < CalculatedValue,
     choose_move_aux(T, Player, Remainder, CalculatedValue, Head, Value, Move).
 choose_move_aux(T, Player, [Head | Remainder], CurrValue, CurrMove, Value, Move) :-
@@ -108,22 +126,6 @@ choose_move_aux(T, Player, [Head | Remainder], CurrValue, CurrMove, Value, Move)
 %     choose_move_aux_aux(T, Player, PieceToMove, Remainder, CalculatedValue, [PieceToMove, X-Y], Value, Move).
 % choose_move_aux_aux(T, Player, PieceToMove, [X-Y | Remainder], CurrValue, CurrMove, Value, Move) :-
 %     choose_move_aux_aux(T, Player, PieceToMove, Remainder, CurrValue, CurrMove, Value, Move).
-
-:- op(1000, xfy, e).
-:- op(1200, xfx, se).
-
-X e Y :- X, Y.
-X se Y.
-
-:- op(600, xfy, esta_em).
-:- op(570, xfy, no_tabuleiro).
-:- op(600, xfy, pode_ir_para).
-:- op(560, xf, ser_rei).
-:- op(560, xf, ser_guerreiro).
-:- op(560, xf, ser_peca).
-:- op(560, xf, ser_valido).
-:- op(560, xf, ser_preto).
-:- op(560, xf, ser_branco).
 
 Nome esta_em X-Y no_tabuleiro T :- procurar_peca(T, Nome, X, Y).
 
