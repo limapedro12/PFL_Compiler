@@ -7,8 +7,8 @@
 
 initial_state(T) :- T = [[0, 0, 0, 0, 0, 0, 0],
                          [0, p, 0, n, 0, q, 0],
-                         [0, -1, 0, 0, 0, 0, 0],
-                         [0, b, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0],
+                         [b, 0, 0, 0, 0, 0, 0],
                          [0, -1, 0, 0, 0, 0, 0],
                          [0, 0, 0, u, 0, d, 0],
                          [0, 0, 0, 0, 0, 0, 0]].
@@ -39,7 +39,7 @@ procurar_peca(T, Nome, X, Y):- (nth1(1, T, Linha1), nth1(X, Linha1, Nome), Y = 1
 move(T, Nome, Xf, Yf, T3):- posso_mover(T, Nome, Xf, Yf),
                             procurar_peca(T, Nome, Xi, Yi),
                             eliminar_caminho(T, Nome, Xf, Yf, T2),
-                            mover_peca_aux(T2, Xi, Yi, Xf, Yf, T3).
+                            mover_peca_aux(T2, Xi, Yi, Xf, Yf, T3), !.
 
 move(T, Nome, Xf, Yf, T2) :- write('Movimento Invalido.'), nl, T = T2, fail.
 
