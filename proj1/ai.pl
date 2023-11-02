@@ -1,18 +1,3 @@
-:- op(1000, xfy, e).
-:- op(1200, xfx, se).
-
-X e Y :- X, Y.
-X se Y.
-:- op(600, xfy, esta_em).
-:- op(570, xfy, no_tabuleiro).
-:- op(600, xfy, pode_ir_para).
-:- op(560, xf, ser_rei).
-:- op(560, xf, ser_guerreiro).
-:- op(560, xf, ser_peca).
-:- op(560, xf, ser_valido).
-:- op(560, xf, ser_preto).
-:- op(560, xf, ser_branco).
-
 steps_between_pieces(T, PieceToMove, EndCoord, NumberOfSteps) :-
     PieceToMove esta_em Xi-Yi no_tabuleiro T,
     not(check_all_invalid(T, EndCoord)),
@@ -66,14 +51,6 @@ value(T, preto, Value) :-
     not(n esta_em Xn-Yn no_tabuleiro T),
     Value is -100, !.
 
-print_q44(T) :-
-    q esta_em 4-4 no_tabuleiro T,
-    not(p esta_em 2-2 no_tabuleiro T),
-    display_game(T), 
-    trace.
-
-print_q44(_T).
-
 value(T, preto, Value) :- 
     n esta_em Xn-Yn no_tabuleiro T,
     valid_moves(T, branco, ListOfMoves),
@@ -104,9 +81,44 @@ value(T, preto, Value) :-
     % se nenhum esta em movimentos validos
      (Value is PValue + QValue - BValue - DValue)), !.
 
+
+value(T, branco, Value) :- 
+    not(n esta_em Xn-Yn no_tabuleiro T),
+    Value is 100, !.
+
 value(T, branco, Value) :-
-    value(T, 1, Value1),
-    Value is -Value1.
+    not(u esta_em Xu-Yu no_tabuleiro T),
+    Value is -100, !.
+
+value(T, branco, Value) :- 
+    u esta_em Xu-Yu no_tabuleiro T,
+    valid_moves(T, preto, ListOfMoves),
+    % se n esta em movimentos validos, entao o valor deve ser -90
+    memberchk([_, Xu-Yu], ListOfMoves),
+    % write('n: '), write(Xn-Yn), nl,
+    % write(ListOfMoves), nl,
+    Value is -90, !.
+
+value(T, branco, Value) :-
+    u esta_em Xu-Yu no_tabuleiro T,
+    n esta_em Xn-Yn no_tabuleiro T,
+
+    value(T, p, [Xu-Yu], PValue),
+    value(T, q, [Xu-Yu], QValue),
+    value(T, b, [Xn-Yn], BValue),
+    value(T, d, [Xn-Yn], DValue),
+
+    valid_moves(T, preto, ListOfMoves),
+    % se p e d estao em movimentos validos, entao o valor o maximo entre os dois deve ser retirado
+    ((b esta_em Xb-Yb no_tabuleiro T, d esta_em Xd-Yd no_tabuleiro T,
+      memberchk([_, Xb-Yb], ListOfMoves), memberchk([_, Xd-Yd], ListOfMoves), 
+      min(BValue, DValue, MinValue), Value is MinValue - BValue - DValue);
+    % se apenas b esta em movimentos validos, entao o valor de b deve ser retirado
+     (b esta_em Xb-Yb no_tabuleiro T, memberchk([_, Xb-Yb], ListOfMoves), Value is BValue - BValue - DValue);
+    % se apenas d esta em movimentos validos, entao o valor de d deve ser retirado
+     (d esta_em Xd-Yd no_tabuleiro T, memberchk([_, Xd-Yd], ListOfMoves), Value is DValue - BValue - DValue);
+    % se nenhum esta em movimentos validos
+     (Value is PValue + DValue - BValue - DValue)), !.
 
 choose_move(T, Equipa, 1, [Peca, Xf-Yf]):- valid_moves(T, Equipa, L),
                                            random_select(M, L, _R),
@@ -130,67 +142,3 @@ choose_move_aux(T, Player, [Head | Remainder], CurrValue, CurrMove, Value, Move)
     choose_move_aux(T, Player, Remainder, CalculatedValue, Head, Value, Move).
 choose_move_aux(T, Player, [Head | Remainder], CurrValue, CurrMove, Value, Move) :-
     choose_move_aux(T, Player, Remainder, CurrValue, CurrMove, Value, Move).
-
-% choose_move_aux_aux(T, Player, PieceToMove, [], Value, Move, Value, Move).
-% choose_move_aux_aux(T, Player, PieceToMove, [X-Y | Remainder], CurrValue, CurrMove, Value, Move) :-
-%     move(T, PieceToMove, X, Y, T1),
-%     value(T1, Player, CalculatedValue),
-%     CurrValue < CalculatedValue,
-%     choose_move_aux_aux(T, Player, PieceToMove, Remainder, CalculatedValue, [PieceToMove, X-Y], Value, Move).
-% choose_move_aux_aux(T, Player, PieceToMove, [X-Y | Remainder], CurrValue, CurrMove, Value, Move) :-
-%     choose_move_aux_aux(T, Player, PieceToMove, Remainder, CurrValue, CurrMove, Value, Move).
-
-Nome esta_em X-Y no_tabuleiro T :- procurar_peca(T, Nome, X, Y).
-
-n ser_rei.
-u ser_rei.
-p ser_guerreiro.
-q ser_guerreiro.
-b ser_guerreiro.
-d ser_guerreiro.
-Peca ser_peca :- Peca ser_rei; Peca ser_guerreiro.
-
-n ser_preto.
-p ser_preto.
-q ser_preto.
-u ser_branco.
-b ser_branco.
-d ser_branco.
-
-X-Y ser_valido :- X >= 1, X =< 7, Y >= 1, Y =< 7.
-
-direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY < 0, DeltaX = 0, Dir = norte.
-direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY > 0, DeltaX = 0, Dir = sul.
-direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY = 0, DeltaX > 0, Dir = este.
-direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY = 0, DeltaX < 0, Dir = oeste.
-direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY < 0, DeltaX > 0, DeltaX is -DeltaY, Dir = nordeste.
-direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY < 0, DeltaX < 0, DeltaX is DeltaY, Dir = noroeste.
-direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY > 0, DeltaX > 0, DeltaX is DeltaY, Dir = sudeste.
-direcao(Xi-Yi, Xf-Yf, Dir) :- DeltaX is Xf - Xi, DeltaY is Yf - Yi, DeltaY > 0, DeltaX < 0, DeltaX is -DeltaY, Dir = sudoeste.
-
-mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = norte, Xf is Xi, Yf is Yi - 1.
-mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = sul, Xf is Xi, Yf is Yi + 1.
-mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = este, Xf is Xi + 1, Yf is Yi.
-mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = oeste, Xf is Xi - 1, Yf is Yi.
-mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = nordeste, Xf is Xi + 1, Yf is Yi - 1.
-mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = noroeste, Xf is Xi - 1, Yf is Yi - 1.
-mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = sudeste, Xf is Xi + 1, Yf is Yi + 1.
-mover_um_na_direcao(Xi-Yi, Xf-Yf, Dir) :- Dir = sudoeste, Xf is Xi - 1, Yf is Yi + 1.
-
-posso_mover_aux(T, Peca, Xi-Yi, Xf-Yf) :- PecaDestino esta_em Xf-Yf no_tabuleiro T,
-                                          PecaDestino \= -1, 
-                                          direcao(Xi-Yi, Xf-Yf, Dir), 
-                                        ((Peca ser_guerreiro, posso_mover_aux(T, Xi-Yi, Xf-Yf, Dir, 2));
-                                         (Peca ser_rei, posso_mover_aux(T, Xi-Yi, Xf-Yf, Dir, 1))),
-                                          Xf-Yf ser_valido.
-
-posso_mover(T, Peca, Xf, Yf) :- Peca esta_em Xi-Yi no_tabuleiro T,
-                                posso_mover_aux(T, Peca, Xi-Yi, Xf-Yf).
-
-posso_mover_aux(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- Xi-Yi = Xf-Yf.
-posso_mover_aux(T, Xi-Yi, Xf-Yf, Dir, NumberStepsLeft) :- NumberStepsLeft > 0,
-                                                      mover_um_na_direcao(Xi-Yi, Xi1-Yi1, Dir),
-                                                      PecaDestino esta_em Xi1-Yi1 no_tabuleiro T,
-                                                    ((PecaDestino = -1, posso_mover_aux(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft));
-                                                     (PecaDestino = 0, posso_mover_aux(T, Xi1-Yi1, Xf-Yf, Dir, NumberStepsLeft - 1));
-                                                     posso_mover_aux(T, Xi1-Yi1, Xf-Yf, Dir, 0)).
