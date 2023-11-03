@@ -2,12 +2,12 @@
 
 ## Tópico e Grupo
 
-O jogo implementado no trabalho prático a que este documento diz respeito é o Shakti.
+O jogo de tabuleiro implementado no trabalho prático a que este documento diz respeito é o Shakti.
 
-O identificador do grupo é _Shakti\_4_ e o mesmo é composto pelos estudantes:
+O identificador do grupo é _Shakti\_4_ e o mesmo é composto pelos seguintes estudantes, sendo apresentada, para cada um, a sua contribuição no desenvolvimento do trabalho:
 
-- Pedro de Almeida Lima, nº mecanográfico 202108806
-- Pedro Simão Januário Vieira, nº mecanográfico 202108768
+- Pedro de Almeida Lima, nº mecanográfico 202108806, contribuição de XX%
+- Pedro Simão Januário Vieira, nº mecanográfico 202108768, contribuição de XX%
 
 ## Instalação e Execução
 
