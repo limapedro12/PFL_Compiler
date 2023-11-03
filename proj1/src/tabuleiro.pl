@@ -151,7 +151,8 @@ display_game(T):- print_divisoria, nl,
                   print_linha(Linha), nl,
                   print_divisoria, nl,
                   fail.
-display_game(_):- write('     1   2   3   4   5   6   7   '), nl.
+display_game(T):- write('     1   2   3   4   5   6   7   '), nl,
+                  check_check(T).
 
 print_divisoria :- write('   ----------------------------- '). 
 
@@ -173,6 +174,14 @@ print_elem(u) :- write('u').
 print_elem(-1) :- write('X').
 print_elem(0) :- write(' ').
 
+check_check(T):- n esta_em Xn-Yn no_tabuleiro T,
+                 valid_moves(T, branco, Lb), memberchk([_, Xn-Yn], Lb),
+                 write('Rei "n" em check!'), nl, fail.
+check_check(T):- u esta_em Xu-Yu no_tabuleiro T,
+                 valid_moves(T, preto, Lp), memberchk([_, Xu-Yu], Lp),
+                 write('Rei "u" em check!'), nl.
+check_check(_T).
+
 traduz_peca('p', p).
 traduz_peca('q', q).
 traduz_peca('n', n).
@@ -180,16 +189,6 @@ traduz_peca('b', b).
 traduz_peca('d', d).
 traduz_peca('u', u).
 traduz_peca(_, inv).
-
-%choose_move(T, Peca, 2, Equipa, Xf-Yf):- para aqui viria a escolha inteligente...
-
-check_check(T, preto):- n esta_em X-Y no_tabuleiro T, 
-                        valid_moves(T, branco, L), memberchk([_, X-Y], L),
-                        write('Rei "n" em check!'), nl.
-
-check_check(T, branco):- u esta_em X-Y no_tabuleiro T,
-                         valid_moves(T, preto, L), memberchk([_, X-Y], L),
-                         write('Rei "u" em check!'), nl.
 
 play_1v1(T, _):- final(T), !.
 
