@@ -85,9 +85,9 @@ value(T, preto, Value) :-
       memberchk([_, Xp-Yp], ListOfMoves), memberchk([_, Xq-Yq], ListOfMoves), 
       min(PValue, QValue, MinValue), Value is MinValue - BValue - DValue);
     % se apenas p esta em movimentos validos, entao o valor de p deve ser retirado
-     (p esta_em Xp-Yp no_tabuleiro T, memberchk([_, Xp-Yp], ListOfMoves), Value is PValue - BValue - DValue);
+     (p esta_em Xp-Yp no_tabuleiro T, memberchk([_, Xp-Yp], ListOfMoves), Value is QValue - BValue - DValue);
     % se apenas q esta em movimentos validos, entao o valor de q deve ser retirado
-     (q esta_em Xq-Yq no_tabuleiro T, memberchk([_, Xq-Yq], ListOfMoves), Value is QValue - BValue - DValue);
+     (q esta_em Xq-Yq no_tabuleiro T, memberchk([_, Xq-Yq], ListOfMoves), Value is PValue - BValue - DValue);
     % se nenhum esta em movimentos validos
      (Value is PValue + QValue - BValue - DValue)), !.
 value(T, branco, Value) :- 
@@ -119,11 +119,11 @@ value(T, branco, Value) :-
       memberchk([_, Xb-Yb], ListOfMoves), memberchk([_, Xd-Yd], ListOfMoves), 
       min(BValue, DValue, MinValue), Value is MinValue - BValue - DValue);
     % se apenas b esta em movimentos validos, entao o valor de b deve ser retirado
-     (b esta_em Xb-Yb no_tabuleiro T, memberchk([_, Xb-Yb], ListOfMoves), Value is BValue - BValue - DValue);
+     (b esta_em Xb-Yb no_tabuleiro T, memberchk([_, Xb-Yb], ListOfMoves), Value is DValue - PValue - QValue);
     % se apenas d esta em movimentos validos, entao o valor de d deve ser retirado
-     (d esta_em Xd-Yd no_tabuleiro T, memberchk([_, Xd-Yd], ListOfMoves), Value is DValue - BValue - DValue);
+     (d esta_em Xd-Yd no_tabuleiro T, memberchk([_, Xd-Yd], ListOfMoves), Value is BValue - PValue - QValue);
     % se nenhum esta em movimentos validos
-     (Value is PValue + DValue - BValue - DValue)), !.
+     (Value is BValue + DValue - PValue - QValue)), !.
 
 % verify_suicide(+T, +Equipa, +CFinal)
 % Verifica se um movimento de uma dada equipa é suicida.
