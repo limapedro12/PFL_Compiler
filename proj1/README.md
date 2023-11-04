@@ -173,7 +173,7 @@ _O pormenor ```verify_suicide``` será discutido mais adiante._
 
 ### Fim do jogo (717 pp + )
 
-Lorem ipsum dolor sit amet.
+A verificação de fim do jogo é contemplada no predicado ```game_over/1```. É invocado antes de que um humano ou computador tenha oportunidade de interferir no estado atual do jogo.
 
 ### Avaliação do estado do jogo
 
