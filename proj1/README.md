@@ -17,18 +17,23 @@ Deve ser colocado um ponto (.) no final de cada _input_ fornecido.
 
 ## Descrição do Jogo
 
-Shakti é um jogo de tabuleiro estratégico. Este jogo é uma variante do xadrez que é jogada num tabuleiro de 7x7. Ambos as equipa têm 1 Rei e 2 Guerreiros. A característica única deste jogo é que durante o jogo, derivado de movimentos específicos, algumas casas são removidas do tabuleiro, reduzindo assim a área de jogo.
+Shakti é um jogo de tabuleiro estratégico. É uma variante do xadrez jogada num tabuleiro de 7x7 casas. Ambas as equipas dispõem de um Rei e dois Guerreiros.
 
-### Objetivos
+A particularidade que mais diferencia o Shakti do xadrez é que durante o seu decorrer, como consequência de certos movimentos, algumas posições do tabuleiro são invalidadas, o que reduz, progressivamente, a área de jogo disponível.
 
-O objetivo do Shakti é vencer o oponente capturando o rei adversário. Para isso acontecer o jogador tem que conseguir dar um "xeque-mate", uma situação em que o rei adversário não tem nenhuma jogada legal para escapar à ameaça.
+Algo importante para o desenrolar do jogo é a captura de peças: uma peça é capturada ("comida") quando uma peça adversária é movida para a posição em que a primeira se encontra.
+
+### Objetivo
+
+O objetivo do Shakti é vencer o oponente capturando o seu Rei, ao mesmo tempo que se protege o próprio monarca. Para isso, o jogador, tal como acontece no xadrez, tem de colocar o adversário na situação de "xeque-mate", onde o Rei deste não dispõe de nenhum movimento legal para escapar à captura.
 
 ### Movimentos Permitidos
 
-- O rei pode mover-se em qualquer direção, uma casa de cada vez.
+- O rei pode mover-se em qualquer direção e sentido, uma casa de cada vez.
 - Os guerreiros podem mover-se em qualquer direção, uma ou duas casas de cada vez. 
-Apenas podem movimentar-se duas casas duma vez se não existir nenhuma peça entre a posição inicial e a posição final. Neste caso, a casa intermédia é removida do tabuleiro.
-- As peças podem saltar sobre as casas removidas, mas não podem parar na mesma.
+     - No último caso, a casa intermédia é invalidada, tornando-se indisponível para futuras jogadas.
+     - Apenas podem movimentar-se duas casas duma vez se não existir nenhuma peça entre a posição inicial e a posição final.
+- As peças podem saltar sobre as casas removidas, mas não podem parar na mesma, i.e. as casas inválidas deixam de ter qualquer valor, tanto para a contabilidade respeitante ao número de passos de um movimento, como para constituírem destino diponível para uma peça.
 
 As regras podem ser consultadas em https://www.iggamecenter.com/en/rules/shakti.
 
