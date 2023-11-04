@@ -3,6 +3,9 @@
 :- use_module(library(random)).
 :- use_module(library(system)).
 
+:- consult('ai.pl').
+
+% Operadores personalizados.
 :- op(600, xfy, esta_em).
 :- op(570, xfy, no_tabuleiro).
 :- op(600, xfy, pode_ir_para).
@@ -11,8 +14,6 @@
 :- op(560, xf, ser_valido).
 :- op(560, xf, ser_preto).
 :- op(560, xf, ser_branco).
-
-:- consult('ai.pl').
 
 % initial_state(-T)
 % Retorna o estado (tabuleiro) com a disposição de peças inicial.
