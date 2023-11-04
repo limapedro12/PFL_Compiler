@@ -3,8 +3,6 @@
 :- use_module(library(random)).
 :- use_module(library(system)).
 
-:- consult('ai.pl').
-
 % Operadores personalizados.
 :- op(600, xfy, esta_em).
 :- op(570, xfy, no_tabuleiro).
@@ -14,6 +12,8 @@
 :- op(560, xf, ser_valido).
 :- op(560, xf, ser_preto).
 :- op(560, xf, ser_branco).
+
+:- consult('ai.pl').
 
 % initial_state(-T)
 % Retorna o estado (tabuleiro) com a disposição de peças inicial.
@@ -320,13 +320,13 @@ play_1_ai_2(T, c):- nl, write('O computador jogara agora...'), nl,
 % play_ai_ai_1(+T, +Equipa)
 % Permite jogar uma partida entre duas IAs (movimento aleatório), especificando a equipa a quem pertence o turno.
 play_ai_ai_1(T, _):- game_over(T), !.
-play_ai_ai_1(T, u):- nl, write('A equipa de reu "u" jogara agora...'), nl,
+play_ai_ai_1(T, u):- nl, write('A equipa de rei "u" jogara agora...'), nl,
                      sleep(2),
                      choose_move(T, branco, 1, [Peca,Xf-Yf]),
                      move(T, Peca, Xf, Yf, T2),
                      write('O computador moveu a peca '), write(Peca), write(' para '), write(Xf-Yf), nl,
                      nl, display_game(T2), play_ai_ai_1(T2, n).
-play_ai_ai_1(T, n):- nl, write('A equipa de reu "n" jogara agora...'), nl,
+play_ai_ai_1(T, n):- nl, write('A equipa de rei "n" jogara agora...'), nl,
                      sleep(2),
                      choose_move(T, preto, 1, [Peca,Xf-Yf]),
                      move(T, Peca, Xf, Yf, T2),

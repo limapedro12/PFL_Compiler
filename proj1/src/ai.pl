@@ -1,5 +1,5 @@
 % steps_between_pieces(+T, +PieceToMove, +EndCoord, -NumberOfSteps)
-% Retorna o numero de passos necessários para uma dada peça chegar a EndCoord
+% Retorna o numero de passos necessários para uma dada peça chegar a EndCoord.
 steps_between_pieces(T, PieceToMove, EndCoord, NumberOfSteps) :-
     PieceToMove esta_em Xi-Yi no_tabuleiro T,
     not(check_all_invalid(T, EndCoord)),
