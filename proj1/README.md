@@ -117,6 +117,8 @@ O tabuleiro é inicializado para o seu estado inicial através do predicado ```i
 
 A interface com o utilizador é totalmente textual.
 
+<br><br><br>
+
 O menu inicial do jogo apresenta-nos diversas opções:
 
 ![Menu inicial](img/menu.png)
@@ -151,6 +153,8 @@ move(T, Nome, Xf, Yf, T2) :- write('Movimento Invalido.'), nl, T = T2, fail.
 Em caso de ilegalidade no movimento tentado, essa informação é impressa e o predicado tem um valor de verdade falso.
 
 A legalidade de um movimento é verificada por ```posso_mover/4```.
+
+<br>
 
 ### Lista de movimentos válidos
 
@@ -189,6 +193,8 @@ play_1v1(T, u):- nl, write('E a vez da equipa de rei "u" | 1 - prosseguir | 0 - 
           ...
 ```
 
+<br><br>
+
 Como a versão do predicado que verifica ```game_over``` está declarada primeiro, caso o jogo esteja no fim, a tal versão terá um valor de verdade verdadeiro, pelo que o Prolog não avançará para qualquer versão de ```play_1v1``` seguinte.
 
 ### Avaliação do estado do jogo
@@ -221,6 +227,8 @@ O computador apresenta dois níveis de dificuldade possíveis como jogador, no q
 Tal escolha reside no predicado ```choose_move/4```, que aceita, como um dos argumentos de entrada, o nível de dificuldade pretendido.
 
 Vejamos o que ocorre em cada nível:
+
+<br>
 
 #### Nível 1
 
