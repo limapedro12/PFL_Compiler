@@ -176,17 +176,68 @@ choose_move(T, Equipa, 1, [Peca, Xf-Yf]):- valid_moves(T, Equipa, L),
 
 _O pormenor ```verify_suicide``` será discutido mais adiante._
 
-### Fim do jogo (717 pp + )
+### Fim do jogo
 
 A verificação de fim do jogo é contemplada no predicado ```game_over/1```. É invocado antes de que um humano ou computador tenha oportunidade de interferir no estado atual do jogo.
+
+O referido predicado, através de um auxiliar, verifica a ausência de um dos reis no tabuleiro, condição para que a equipa do outro rei ganhe o jogo:
+
+```c
+game_over(T, branco):- not(procurar_peca(T, n, _X1, _Y1)), write('Rei "u" Ganha!!!').
+game_over(T, preto):- not(procurar_peca(T, u, _X2, _Y2)), write('Rei "n" Ganha!!!').
+
+game_over(T):- game_over(T, _).
+```
+
+Em caso afirmativo, o jogo é terminado, tendo em conta o mecanismo demonstrado abaixo. Tomemos como exemplo o predicado que permite o desenrolar do jogo no modo de pessoa contra pessoa:
+
+```c
+play_1v1(T, _):- game_over(T), !.
+play_1v1(T, u):- nl, write('E a vez da equipa de rei "u" | 1 - prosseguir | 0 - sair'), nl,
+                 read(O), nl,
+
+          ...
+```
+
+Como a versão do predicado que verifica ```game_over``` está declarada primeiro, caso o jogo esteja no fim, a tal versão terá um valor de verdade verdadeiro, pelo que o Prolog não avançará para qualquer versão de ```play_1v1``` seguinte.
 
 ### Avaliação do estado do jogo
 
 Lorem ipsum dolor sit amet.
 
+
+Entao é assim:
+Distancia é numero de jogadas para chegar a determinado sitio (nao é a distancia literal), obtido atraves de BFS (predicado steps_between_pieces)
+Para calcular o valor dum guerreiro: 1/(distancia ao rei inimigo) ou zero se nao estiver em campo (predicado value/4)
+Para calcular o valor de um tabuleiro: (predicado value/3)
+-100 se nao tiveres o teu rei no tabuleiro
+-90 se alguma peca do adversario estiver a distancia de 1 (puder ser comido) do teu rei
+Soma dos valores dos teus guerreiros menos os valores dos guereiros inimigos
+Se alguma peca do adversario estiver a distancia de 1 (puder ser comido) de um dos teus guerreiros o valor deste guerreiro nao conta para o calculo anterior
+Se ambos os guerreiros estiverem na situacao anterior, apenas contamos com o guerreiro de menor valor(assumimos que o de maior valor vai ser comido)
+
 ### Jogadas do computador
 
-Lorem ipsum dolor sit amet.
+O computador apresenta dois níveis de dificuldade possíveis como jogador, no que diz respeito à escolha de movimentos a executar por uma equipa num dado momento de jogo.
+
+Tal escolha reside no predicado ```choose_move/4```, que aceita, como um dos argumentos de entrada, o nível de dificuldade pretendido.
+
+#### Nível 1
+
+O primeiro nível, de dificuldade mais baixa, consiste em (quase) aleatoriedade na escolha, mediante os movimentos possíveis para a equipa em questão (recorrendo a ```choose_move```).
+
+Desprezando a impossibilidade de as máquinas fazerem escolhas verdadeiramente aleatórias, o referido "quase" prende-se com a verificação, através de ```verify_suicide/3``` de que a jogada escolhida não resultará em "suicídio" (capturar o próprio rei) ou auto-flagelo (capturar um próprio guerreiro) para a equipa em questão, i.e. que não se encontra nenhuma peça da própria equipa na casa do tabuleiro para onde o computador escolheu mover uma peça. Com a característica descrita, acreditamos que se acrescenta algum valor e interesse ao nível de dificuldade que se está a discutir.
+
+#### Nível 2
+
+O segundo nível constitui uma dificuldade um pouco mais elevada, atribuindo alguma inteligência à máquina na leitura do jogo e escolha do movimento de uma equipa num dado momento.
+
+Tendo em conta os conceitos e processos apresentados no tópico respeitante à avaliação do estado do jogo, o processo de escolha de uma jogada é:
+
+- Cálculo de todos os movimentos válidos para a dada equipa, tal como no nível anterior;
+- Para cada movimento, simula-se um tabuleiro (estado de jogo) depois da sua execução;
+- É determinado o valor de cada um dos estados simulados;
+- Escolhe-se, então o tabuleiro de maior valor e, consequentemente, o movimento que lhe dá origem.
 
 ## Conclusões
 
