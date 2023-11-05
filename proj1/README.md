@@ -117,8 +117,6 @@ O tabuleiro é inicializado para o seu estado inicial através do predicado ```i
 
 A interface com o utilizador é totalmente textual.
 
-<br><br><br>
-
 O menu inicial do jogo apresenta-nos diversas opções:
 
 ![Menu inicial](img/menu.png)
@@ -154,8 +152,6 @@ Em caso de ilegalidade no movimento tentado, essa informação é impressa e o p
 
 A legalidade de um movimento é verificada por ```posso_mover/4```.
 
-<br>
-
 ### Lista de movimentos válidos
 
 Uma lista de movimentos possíveis para as peças de uma dada equipa, tendo em conta um estado do jogo, é dada por ```valid_moves/3```, sendo que o predicado que dita a inclusão (ou não) de um movimento é ```posso_mover/4```:
@@ -168,17 +164,7 @@ valid_moves(T, branco, L):- setof([Nome, Xf-Yf], (Nome ser_branco, (procurar_pec
 
 Os elementos da dita lista, ```L```, são listas de dimensão 2, sendo o primeiro elemento de cada uma o nome (letra) de uma peça e o segundo as coordenadas para onde pode ser movida.
 
-Como seria de esperar, a funcionalidade descrita neste ponto é crucial nos modeos de jogo que envolvem o computador (```choose_move/4```), pois é a partir da lista de jogadas possíveis que, num dado momento, aquele escolherá (ainda que aleatoriamente) o movimento a executar. Veja-se o exemplo (escolha aleatória de uma jogada):
-
-```c
-choose_move(T, Equipa, 1, [Peca, Xf-Yf]):- valid_moves(T, Equipa, L),
-                                           random_select(M, L, _R),
-                                           nth0(0, M, Peca),
-                                           nth0(1, M, Xf-Yf),
-                                           verify_suicide(T, Equipa, Xf-Yf).
-```
-
-_O pormenor ```verify_suicide``` será discutido mais adiante._
+Como seria de esperar, a funcionalidade descrita neste ponto é crucial nos modelos de jogo que envolvem o computador (```choose_move/4```), pois é a partir da lista de jogadas possíveis que, num dado momento, aquele escolherá o movimento a executar.
 
 ### Fim do jogo
 
@@ -192,8 +178,6 @@ game_over(T, preto):- not(procurar_peca(T, u, _X2, _Y2)), write('Rei "n" Ganha!!
 
 game_over(T):- game_over(T, _).
 ```
-
-<br><br><br>
 
 Em caso afirmativo, o jogo é terminado, tendo em conta o mecanismo demonstrado abaixo. Tomemos como exemplo o predicado que permite o desenrolar do jogo no modo de pessoa contra pessoa:
 
@@ -257,7 +241,11 @@ Tendo em conta os conceitos e processos apresentados no tópico respeitante à a
 
 ## Conclusões
 
-Lorem ipsum dolor sit amet.
+O jogo escolhido foi implementado com sucesso.
+
+Um problema conhecido é a falta de tratamento de _input_ em alguns momentos.
+
+Uma possível melhoria seria a implementação de uma fonte customizada para mostrar o tabuleiro e as peças.
 
 ## Bibliografia
 
