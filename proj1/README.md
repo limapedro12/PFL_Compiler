@@ -246,7 +246,7 @@ Tendo em conta os conceitos e processos apresentados no tópico respeitante à a
 
 - Cálculo de todos os movimentos válidos para a dada equipa, tal como no nível anterior;
 - Para cada movimento, simula-se um tabuleiro (estado de jogo) depois da sua execução;
-- É determinado o valor de cada um dos estados simulados;
+- É determinado o valor de cada um dos estados simulados, recorrendo a ```value/3```;
 - Escolhe-se, então o tabuleiro de maior valor e, consequentemente, o movimento que lhe dá origem.
 
 ## Conclusões
