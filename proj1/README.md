@@ -203,24 +203,34 @@ Como a versão do predicado que verifica ```game_over``` está declarada primeir
 
 ### Avaliação do estado do jogo
 
-Lorem ipsum dolor sit amet.
+Para avaliar um estado (tabuleiro) do jogo, recorre-se ao predicado ```value/3```.
 
+É importante ter em conta que a avaliação apenas é desempenhada em contexto de escolha de jogada por parte do computador, momento a seguir ao qual o adversário jogará. Tal será discutido no ponto seguinte.
 
-Entao é assim:
-Distancia é numero de jogadas para chegar a determinado sitio (nao é a distancia literal), obtido atraves de BFS (predicado steps_between_pieces)
-Para calcular o valor dum guerreiro: 1/(distancia ao rei inimigo) ou zero se nao estiver em campo (predicado value/4)
-Para calcular o valor de um tabuleiro: (predicado value/3)
--100 se nao tiveres o teu rei no tabuleiro
--90 se alguma peca do adversario estiver a distancia de 1 (puder ser comido) do teu rei
-Soma dos valores dos teus guerreiros menos os valores dos guereiros inimigos
-Se alguma peca do adversario estiver a distancia de 1 (puder ser comido) de um dos teus guerreiros o valor deste guerreiro nao conta para o calculo anterior
-Se ambos os guerreiros estiverem na situacao anterior, apenas contamos com o guerreiro de menor valor(assumimos que o de maior valor vai ser comido)
+Entenda-se <ins>distância</ins> como o número de movimentos que uma peça tem de efetuar para chegar a uma determinada casa. Este valor é obtido através de _Breadth First Search_ (BFS), entendendo o tabuleiro como um grafo, implementado no predicado ```steps_between_pieces/7```.
+
+Posto isto, um passo necessário para atribuir um valor a uma equipa num dado estado de jogo é determinar o valor individual de cada peça de tal equipa (```value/4```). Para um guerreiro, tal valor é dado pelo inverso da distância ao rei inimigo, ou 0, caso o guerreiro já tenha sido capturado.
+
+Correspondendo um valor maior a um estado de jogo mais favorável à equipa em questão, o valor de um tabuleiro é obtido por:
+
+- Casos particulares
+     - -100, caso o rei da equipa que nos interessa não se encontrar no tabuleiro;
+     - -90, caso alguma peça do adversário se encontrar a uma distância de 1 movimento do nosso rei (poderá capturá-lo).
+
+- Caso geral
+     - Somatório dos valores individuais dos nossos guerreiros, ao qual é subtraído o somatório dos valores dos guerreiros adversários;
+     - Caso alguma peça adversária se encontre a uma distância de 1 movimento de um dos nossos guerreiros, o valor do mesmo não é contabilizado;
+     - Caso o disposto no parágrafo anterior se verifique com os dois guerreiros, é contabilizado o menor valor entre os valores dos dois.
+
+Mais uma vez, é importante ter em mente o contexto em que o processo descrito é levado a cabo, tal como abordado no início do ponto (e detalhado no próximo).
 
 ### Jogadas do computador
 
 O computador apresenta dois níveis de dificuldade possíveis como jogador, no que diz respeito à escolha de movimentos a executar por uma equipa num dado momento de jogo.
 
 Tal escolha reside no predicado ```choose_move/4```, que aceita, como um dos argumentos de entrada, o nível de dificuldade pretendido.
+
+Vejamos o que ocorre em cada nível:
 
 #### Nível 1
 
