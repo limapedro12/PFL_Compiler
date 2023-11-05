@@ -117,6 +117,8 @@ O tabuleiro é inicializado para o seu estado inicial através do predicado ```i
 
 A interface com o utilizador é totalmente textual.
 
+<br><br><br>
+
 O menu inicial do jogo apresenta-nos diversas opções:
 
 ![Menu inicial](img/menu.png)
@@ -127,7 +129,7 @@ O menu inicial do jogo apresenta-nos diversas opções:
 
 Ao escolhermos uma opção, com o predicado ```escolher_modo/1```, será invocado um predicado específico consoante o modo de jogo escolhido. Por exemplo, ao escolher a opção de humano vs humano, é invocado o predicado ```play_1v1/2```. Este, por sua vez, recebe e lida com o _input_ do utilizador e, após o processamento bem-sucedido da sua jogada, invoca-se recursivamente, com a indicação de que é a vez do outro jogador. Esta lógica de gestão de turnos é análoga nos restantes modos.
 
-No caso de uma partida entre dois humanos, somos informados, em cada jogada, que equipa jogará.
+No caso de uma partida entre dois humanos, somos informados, em cada jogada, de que equipa jogará.
 
 No caso de jogos entre um humano e a máquina, somos informados, no início, de quais as peças nos pertencem.
 
@@ -151,6 +153,8 @@ move(T, Nome, Xf, Yf, T2) :- write('Movimento Invalido.'), nl, T = T2, fail.
 Em caso de ilegalidade no movimento tentado, essa informação é impressa e o predicado tem um valor de verdade falso.
 
 A legalidade de um movimento é verificada por ```posso_mover/4```.
+
+<br>
 
 ### Lista de movimentos válidos
 
@@ -188,6 +192,8 @@ game_over(T, preto):- not(procurar_peca(T, u, _X2, _Y2)), write('Rei "n" Ganha!!
 
 game_over(T):- game_over(T, _).
 ```
+
+<br><br><br>
 
 Em caso afirmativo, o jogo é terminado, tendo em conta o mecanismo demonstrado abaixo. Tomemos como exemplo o predicado que permite o desenrolar do jogo no modo de pessoa contra pessoa:
 
