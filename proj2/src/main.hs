@@ -9,14 +9,29 @@ data Inst =
   deriving Show
 type Code = [Inst]
 
--- createEmptyStack :: Stack
-createEmptyStack = undefined -- TODO, Uncomment the function signature after defining Stack
+type VarName = String
+data VarValue = IntegerValue Integer
+              | BoolValue Bool
+                deriving Show
 
--- stack2Str :: Stack -> String
-stack2Str = undefined -- TODO, Uncomment all the other function type declarations as you implement them
+printVarVal :: VarValue -> String
+printVarVal (IntegerValue i) = Prelude.show i
+printVarVal (BoolValue b) = Prelude.show b
 
--- createEmptyState :: State
-createEmptyState = undefined -- TODO, Uncomment the function signature after defining State
+type Stack = [VarValue]
+
+type Var = (VarName, VarValue)
+
+type State = [Var]
+
+createEmptyStack :: Stack
+createEmptyStack = []
+
+stack2Str :: Stack -> String
+stack2Str stack = foldr (\x y -> (printVarVal x) ++ "," ++ y) "" stack
+
+createEmptyState :: State
+createEmptyState = []
 
 -- state2Str :: State -> String
 state2Str = undefined -- TODO
