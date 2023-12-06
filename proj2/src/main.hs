@@ -13,6 +13,7 @@ type Code = [Inst]
 type VarName = String
 data VarValue = IntegerValue Integer
               | BoolValue Bool
+              deriving Show
 
 printVarVal :: VarValue -> String
 printVarVal (IntegerValue i) = Prelude.show i
@@ -59,7 +60,10 @@ store varName ((headName, headVal):oldStateTail) oldStack | varName == headName 
                                                           | otherwise = ((headName, headVal):newState, newStack)
                                                           where newState1 = (varName, top oldStack):oldStateTail
                                                                 (newState, newStack) = store varName oldStateTail oldStack
-                                                                                        
+
+add :: Stack -> Stack
+add stack = push result (pop (pop stack))
+            where result = IntegerValue top stack + IntegerValue (top (pop stack))
 
 run :: (Code, Stack, State) -> (Code, Stack, State)
 run (code, stack, state) = undefined
