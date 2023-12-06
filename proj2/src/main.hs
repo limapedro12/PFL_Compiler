@@ -39,8 +39,30 @@ createEmptyState = []
 state2Str :: State -> String
 state2Str = foldr (\x y -> if y /= "" then printVar x ++ "," ++ y else printVar x) ""
 
--- run :: (Code, Stack, State) -> (Code, Stack, State)
-run = undefined -- TODO
+top :: Stack -> VarValue
+top (x:_) = x
+
+pop :: Stack -> Stack
+pop (_:xs) = xs
+
+push :: VarValue -> Stack -> Stack
+push x stack = x:stack
+
+fetch :: VarName -> State -> Stack -> Stack
+fetch varName ((headName, headVal):stateTail) oldStack | headName /= varName = fetch varName stateTail oldStack
+                                                       | otherwise = push headVal oldStack
+
+store :: VarName -> State -> Stack -> (State, Stack)
+store varName [] oldStack = (newState, pop oldStack)
+                        where newState = [(varName, top oldStack)]
+store varName ((headName, headVal):oldStateTail) oldStack | varName == headName = (newState1, pop oldStack)
+                                                          | otherwise = ((headName, headVal):newState, newStack)
+                                                          where newState1 = (varName, top oldStack):oldStateTail
+                                                                (newState, newStack) = store varName oldStateTail oldStack
+                                                                                        
+
+run :: (Code, Stack, State) -> (Code, Stack, State)
+run (code, stack, state) = undefined
 
 -- To help you test your assembler
 testAssembler :: Code -> (String, String)
