@@ -1,3 +1,4 @@
+import Distribution.TestSuite (TestInstance(name))
 -- PFL 2023/24 - Haskell practical assignment quickstart
 
 -- Part 1
@@ -17,6 +18,9 @@ printVarVal :: VarValue -> String
 printVarVal (IntegerValue i) = Prelude.show i
 printVarVal (BoolValue b) = Prelude.show b
 
+printVar :: Var -> String
+printVar (name, value) = name ++ "=" ++ printVarVal value
+
 type Stack = [VarValue]
 
 type Var = (VarName, VarValue)
@@ -32,8 +36,8 @@ stack2Str = foldr (\x y -> if y /= "" then printVarVal x ++ "," ++ y else printV
 createEmptyState :: State
 createEmptyState = []
 
--- state2Str :: State -> String
-state2Str = undefined -- TODO
+state2Str :: State -> String
+state2Str = foldr (\x y -> if y /= "" then printVar x ++ "," ++ y else printVar x) ""
 
 -- run :: (Code, Stack, State) -> (Code, Stack, State)
 run = undefined -- TODO
