@@ -13,6 +13,7 @@ type Code = [Inst]
 type VarName = String
 data VarValue = IntegerValue Integer
               | BoolValue Bool
+              deriving Show
 
 printVarVal :: VarValue -> String
 printVarVal (IntegerValue i) = Prelude.show i
@@ -59,7 +60,29 @@ store varName ((headName, headVal):oldStateTail) oldStack | varName == headName 
                                                           | otherwise = ((headName, headVal):newState, newStack)
                                                           where newState1 = (varName, top oldStack):oldStateTail
                                                                 (newState, newStack) = store varName oldStateTail oldStack
-                                                                                        
+addValues :: VarValue -> VarValue -> VarValue
+addValues (IntegerValue a) (IntegerValue b) = IntegerValue (a + b)
+addValues _ _ = error "Run-time error"
+
+add :: Stack -> Stack
+add stack = push result (pop (pop stack))
+            where result = top stack `addValues` top (pop stack)
+
+multValues :: VarValue -> VarValue -> VarValue
+multValues (IntegerValue a) (IntegerValue b) = IntegerValue (a * b)
+multValues _ _ = error "Run-time error"
+
+mult :: Stack -> Stack
+mult stack = push result (pop (pop stack))
+             where result = top stack `multValues` top (pop stack)
+
+subValues :: VarValue -> VarValue -> VarValue
+subValues (IntegerValue a) (IntegerValue b) = IntegerValue (a - b)
+subValues _ _ = error "Run-time error"
+
+sub :: Stack -> Stack
+sub stack = push result (pop (pop stack))
+            where result = top stack `subValues` top (pop stack)
 
 run :: (Code, Stack, State) -> (Code, Stack, State)
 run (code, stack, state) = undefined
