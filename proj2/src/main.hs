@@ -12,7 +12,6 @@ type Code = [Inst]
 type VarName = String
 data VarValue = IntegerValue Integer
               | BoolValue Bool
-                deriving Show
 
 printVarVal :: VarValue -> String
 printVarVal (IntegerValue i) = Prelude.show i
@@ -28,7 +27,7 @@ createEmptyStack :: Stack
 createEmptyStack = []
 
 stack2Str :: Stack -> String
-stack2Str stack = foldr (\x y -> (printVarVal x) ++ "," ++ y) "" stack
+stack2Str = foldr (\x y -> if y /= "" then printVarVal x ++ "," ++ y else printVarVal x) ""
 
 createEmptyState :: State
 createEmptyState = []
