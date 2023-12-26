@@ -16,8 +16,8 @@ data VarValue = IntegerValue Integer
               deriving Show
 
 printVarVal :: VarValue -> String
-printVarVal (IntegerValue i) = Prelude.show i
-printVarVal (BoolValue b) = Prelude.show b
+printVarVal (IntegerValue x) = Prelude.show x
+printVarVal (BoolValue x) = Prelude.show x
 
 printVar :: Var -> String
 printVar (name, value) = name ++ "=" ++ printVarVal value
@@ -40,6 +40,7 @@ createEmptyState = []
 state2Str :: State -> String
 state2Str = foldr (\x y -> if y /= "" then printVar x ++ "," ++ y else printVar x) ""
 
+-- Stack operations
 top :: Stack -> VarValue
 top (x:_) = x
 
@@ -49,17 +50,7 @@ pop (_:xs) = xs
 push :: VarValue -> Stack -> Stack
 push x stack = x:stack
 
-fetch :: VarName -> State -> Stack -> Stack
-fetch varName ((headName, headVal):stateTail) oldStack | headName /= varName = fetch varName stateTail oldStack
-                                                       | otherwise = push headVal oldStack
-
-store :: VarName -> State -> Stack -> (State, Stack)
-store varName [] oldStack = (newState, pop oldStack)
-                        where newState = [(varName, top oldStack)]
-store varName ((headName, headVal):oldStateTail) oldStack | varName == headName = (newState1, pop oldStack)
-                                                          | otherwise = ((headName, headVal):newState, newStack)
-                                                          where newState1 = (varName, top oldStack):oldStateTail
-                                                                (newState, newStack) = store varName oldStateTail oldStack
+-- Instruction set
 addValues :: VarValue -> VarValue -> VarValue
 addValues (IntegerValue a) (IntegerValue b) = IntegerValue (a + b)
 addValues _ _ = error "Run-time error"
@@ -84,13 +75,93 @@ sub :: Stack -> Stack
 sub stack = push result (pop (pop stack))
             where result = top stack `subValues` top (pop stack)
 
+true :: Stack -> Stack
+true = push (BoolValue True)
+
+false :: Stack -> Stack
+false = push (BoolValue False)
+
+eqValues :: VarValue -> VarValue -> VarValue
+eqValues (IntegerValue a) (IntegerValue b) = BoolValue (a == b)
+eqValues (BoolValue a) (BoolValue b) = BoolValue (a == b)
+eqValues _ _ = error "Run-time error"
+
+eq :: Stack -> Stack
+eq stack = push result (pop (pop stack))
+           where result = top stack `eqValues` top (pop stack)
+
+leValues :: VarValue -> VarValue -> VarValue
+leValues (IntegerValue a) (IntegerValue b) = BoolValue (a <= b)
+leValues _ _ = error "Run-time error"
+
+le :: Stack -> Stack
+le stack = push result (pop (pop stack))
+           where result = top stack `leValues` top (pop stack)
+
+andValues :: VarValue -> VarValue -> VarValue
+andValues (BoolValue a) (BoolValue b) = BoolValue (a && b)
+andValues _ _ = error "Run-time error"
+
+and :: Stack -> Stack
+and stack = push result (pop (pop stack))
+            where result = top stack `andValues` top (pop stack)
+
+negValue :: VarValue -> VarValue
+negValue (BoolValue a) = BoolValue (not a)
+negValue _ = error "Run-time error"
+
+neg :: Stack -> Stack
+neg stack = push result (pop stack)
+            where result = negValue (top stack)
+
+fetch :: VarName -> Stack -> State -> Stack
+fetch varName oldStack ((headName, headVal):stateTail) | headName /= varName = fetch varName oldStack stateTail
+                                                       | otherwise = push headVal oldStack
+
+store :: VarName -> Stack -> State -> (Stack, State)
+store varName oldStack [] = (pop oldStack, newState)
+                        where newState = [(varName, top oldStack)]
+store varName oldStack ((headName, headVal):oldStateTail) | varName == headName = (pop oldStack, newState1)
+                                                          | otherwise = (newStack, (headName, headVal):newState)
+                                                          where newState1 = (varName, top oldStack):oldStateTail
+                                                                (newStack, newState) = store varName oldStack oldStateTail
+
+branch :: Code -> Code -> Stack -> State -> (Code, Stack, State)
+branch c1 c2 stack state = case top stack of
+  BoolValue True -> (c1, pop stack, state)
+  BoolValue False -> (c2, pop stack, state)
+  _ -> error "Run-time error"
+
+-- loop :: Code -> Code -> Stack -> State -> (Code, Stack, State)
+-- loop c1 c2 stack state = case top stack of
+--   BoolValue True -> (c1 ++ [Loop c1 c2], pop stack, state)
+--   _              -> (c2, pop stack, state)
+
 run :: (Code, Stack, State) -> (Code, Stack, State)
-run (code, stack, state) = undefined
+run ([], stack, state) = ([], stack, state)
+run (inst:r, stack, state) = case inst of
+  Push n -> run (r, push (IntegerValue n) stack, state)
+  Add -> run (r, add stack, state)
+  Mult -> run(r, mult stack, state)
+  Sub -> run(r, sub stack, state)
+  Tru -> run(r, true stack, state)
+  Fals -> run(r, false stack, state)
+  Equ -> run(r, eq stack, state)
+  Le -> run(r, le stack, state)
+  And -> run(r, Main.and stack, state)
+  Neg -> run(r, neg stack, state)
+  Fetch x -> run(r, fetch x stack state, state)
+  Store x -> let (newStack, newState) = store x stack state in run (r, newStack, newState)
+  Noop -> run(r, stack, state)
+  Branch c1 c2 -> let (branchCode, newStack, newState) = branch c1 c2 stack state in run(branchCode ++ r, newStack, newState)
+  Loop c1 c2 -> run(c1 ++ [Branch c2 [Loop c1 c2, Noop]] ++ r, stack, state)
 
 -- To help you test your assembler
 testAssembler :: Code -> (String, String)
 testAssembler code = (stack2Str stack, state2Str state)
   where (_,stack,state) = run(code, createEmptyStack, createEmptyState)
+
+-- TODO: ordem alfabética no state e resolver teste fatorial
 
 -- Examples:
 -- testAssembler [Push 10,Push 4,Push 3,Sub,Mult] == ("-10","")
