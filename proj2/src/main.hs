@@ -1,4 +1,5 @@
 import Distribution.TestSuite (TestInstance(name))
+import Data.List(sortOn)
 -- PFL 2023/24 - Haskell practical assignment quickstart
 
 -- Part 1
@@ -38,7 +39,8 @@ createEmptyState :: State
 createEmptyState = []
 
 state2Str :: State -> String
-state2Str = foldr (\x y -> if y /= "" then printVar x ++ "," ++ y else printVar x) ""
+state2Str state = foldr (\x y -> if y /= "" then printVar x ++ "," ++ y else printVar x) "" sorted
+                  where sorted = sortOn fst state
 
 -- Stack operations
 top :: Stack -> VarValue
@@ -132,11 +134,6 @@ branch c1 c2 stack state = case top stack of
   BoolValue False -> (c2, pop stack, state)
   _ -> error "Run-time error"
 
--- loop :: Code -> Code -> Stack -> State -> (Code, Stack, State)
--- loop c1 c2 stack state = case top stack of
---   BoolValue True -> (c1 ++ [Loop c1 c2], pop stack, state)
---   _              -> (c2, pop stack, state)
-
 run :: (Code, Stack, State) -> (Code, Stack, State)
 run ([], stack, state) = ([], stack, state)
 run (inst:r, stack, state) = case inst of
@@ -154,14 +151,12 @@ run (inst:r, stack, state) = case inst of
   Store x -> let (newStack, newState) = store x stack state in run (r, newStack, newState)
   Noop -> run(r, stack, state)
   Branch c1 c2 -> let (branchCode, newStack, newState) = branch c1 c2 stack state in run(branchCode ++ r, newStack, newState)
-  Loop c1 c2 -> run(c1 ++ [Branch c2 [Loop c1 c2, Noop]] ++ r, stack, state)
+  Loop c1 c2 -> run(c1 ++ [Branch (c2 ++ [Loop c1 c2]) [Noop]] ++ r, stack, state)
 
 -- To help you test your assembler
 testAssembler :: Code -> (String, String)
 testAssembler code = (stack2Str stack, state2Str state)
   where (_,stack,state) = run(code, createEmptyStack, createEmptyState)
-
--- TODO: ordem alfabética no state e resolver teste fatorial
 
 -- Examples:
 -- testAssembler [Push 10,Push 4,Push 3,Sub,Mult] == ("-10","")
