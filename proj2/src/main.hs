@@ -1,5 +1,6 @@
 import Distribution.TestSuite (TestInstance(name))
 import Data.List(sortOn)
+import Control.Monad.RWS (Sum)
 -- PFL 2023/24 - Haskell practical assignment quickstart
 
 -- Part 1
@@ -173,8 +174,17 @@ testAssembler code = (stack2Str stack, state2Str state)
 
 -- TODO: Define the types Aexp, Bexp, Stm and Program
 
--- compA :: Aexp -> Code
-compA = undefined -- TODO
+data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | Var VarName | Num Integer
+data Bexp = Andexp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | Bool Bool
+
+data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] | If Bexp [Stm] [Stm]
+
+compA :: Aexp -> Code
+compA (AddExp a1 a2) = compA a1 ++ compA a2 ++ [Add]
+compA (MultExp a1 a2) = compA a1 ++ compA a2 ++ [Mult]
+compA (SubExp a1 a2) = compA a1 ++ compA a2 ++ [Sub]
+compA (Var x) = [Fetch x]
+compA (Num n) = [Push n]
 
 -- compB :: Bexp -> Code
 compB = undefined -- TODO
