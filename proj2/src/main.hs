@@ -175,7 +175,7 @@ testAssembler code = (stack2Str stack, state2Str state)
 -- TODO: Define the types Aexp, Bexp, Stm and Program
 
 data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | Var VarName | Num Integer
-data Bexp = Andexp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | Bool Bool
+data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | Bool Bool
 
 data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] | If Bexp [Stm] [Stm]
 
@@ -186,8 +186,14 @@ compA (SubExp a1 a2) = compA a1 ++ compA a2 ++ [Sub]
 compA (Var x) = [Fetch x]
 compA (Num n) = [Push n]
 
--- compB :: Bexp -> Code
-compB = undefined -- TODO
+compB :: Bexp -> Code
+compB (AndExp b1 b2) = compB b1 ++ compB b2 ++ [And]
+compB (LeExp a1 a2) = compA a1 ++ compA a2 ++ [Le]
+compB (EquExp a1 a2) = compA a1 ++ compA a2 ++ [Equ]
+compB (NegExp b) = compB b ++ [Neg]
+compB (Bool True) = [Tru]
+compB (Bool False) = [Fals]
+
 
 -- compile :: Program -> Code
 compile = undefined -- TODO
