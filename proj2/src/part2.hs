@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 import Text.Parsec as Parsec
 import Text.Parsec.String
 import Text.Parsec.Expr
@@ -101,9 +102,12 @@ parse :: String -> Program
 parse programString | isRight res = parsedProgram
                     | isLeft res = throwParseError errorWhileParsing
     where
-        res = Parsec.parse codeParser "" programString
+        res = Parsec.parse codeParser "" (cleanSpaces programString)
         Right parsedProgram = res
         Left errorWhileParsing = res
+
+cleanSpaces :: String -> String
+cleanSpaces = filter (`notElem` " \n\t")
 
 throwParseError :: ParseError -> Program
 throwParseError errorToThrow = error ("Parse Error in " ++ show errorToThrow ++ "\n")
