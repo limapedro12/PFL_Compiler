@@ -194,7 +194,6 @@ compB (NegExp b) = compB b ++ [Neg]
 compB (Bool True) = [Tru]
 compB (Bool False) = [Fals]
 
-
 -- compile :: Program -> Code
 compile = undefined -- TODO
 
