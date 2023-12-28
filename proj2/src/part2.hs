@@ -42,7 +42,7 @@ data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | Var VarNam
             deriving (Eq, Show)
 data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | Bool Bool
             deriving (Eq, Show)
-data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] | IfThenElse Bexp [Stm] [Stm]
+data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] | IfThenElse Bexp [Stm] [Stm] | NoopStm
            deriving (Eq, Show)
 
 type Program = [Stm]
@@ -96,7 +96,7 @@ assignAexpParser = AssignAexp <$> many1 letter
 ifParser :: Parser Stm
 ifParser = IfThenElse <$> (string "if" >> char '(' >> bExpParser <* char ')')
                       <*> (string "then" >> char '(' >> many statementParser <* char ')')
-                      <*> option [] (string "else" >> char '(' >> many statementParser <* char ')')
+                      <*> option [NoopStm] (string "else" >> char '(' >> many statementParser <* char ')')
 
 parse :: String -> Program
 parse programString | isRight res = parsedProgram

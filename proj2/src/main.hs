@@ -1,6 +1,12 @@
-import Distribution.TestSuite (TestInstance(name))
+import Distribution.TestSuite(TestInstance(name))
 import Data.List(sortOn)
-import Control.Monad.RWS (Sum)
+import Text.Parsec as Parsec hiding (State)
+import Text.Parsec.String
+import Text.Parsec.Expr
+import Text.Parsec.Combinator
+import Text.Parsec.Char
+import Control.Monad
+import Data.Either
 -- PFL 2023/24 - Haskell practical assignment quickstart
 
 -- Part 1
@@ -140,24 +146,24 @@ run ([], stack, state) = ([], stack, state)
 run (inst:r, stack, state) = case inst of
   Push n -> run (r, push (IntegerValue n) stack, state)
   Add -> run (r, add stack, state)
-  Mult -> run(r, mult stack, state)
-  Sub -> run(r, sub stack, state)
-  Tru -> run(r, true stack, state)
-  Fals -> run(r, false stack, state)
-  Equ -> run(r, eq stack, state)
-  Le -> run(r, le stack, state)
-  And -> run(r, Main.and stack, state)
-  Neg -> run(r, neg stack, state)
-  Fetch x -> run(r, fetch x stack state, state)
+  Mult -> run (r, mult stack, state)
+  Sub -> run (r, sub stack, state)
+  Tru -> run (r, true stack, state)
+  Fals -> run (r, false stack, state)
+  Equ -> run (r, eq stack, state)
+  Le -> run (r, le stack, state)
+  And -> run (r, Main.and stack, state)
+  Neg -> run (r, neg stack, state)
+  Fetch x -> run (r, fetch x stack state, state)
   Store x -> let (newStack, newState) = store x stack state in run (r, newStack, newState)
-  Noop -> run(r, stack, state)
-  Branch c1 c2 -> let (branchCode, newStack, newState) = branch c1 c2 stack state in run(branchCode ++ r, newStack, newState)
-  Loop c1 c2 -> run(c1 ++ [Branch (c2 ++ [Loop c1 c2]) [Noop]] ++ r, stack, state)
+  Noop -> run (r, stack, state)
+  Branch c1 c2 -> let (branchCode, newStack, newState) = branch c1 c2 stack state in run (branchCode ++ r, newStack, newState)
+  Loop c1 c2 -> run (c1 ++ [Branch (c2 ++ [Loop c1 c2]) [Noop]] ++ r, stack, state)
 
 -- To help you test your assembler
 testAssembler :: Code -> (String, String)
 testAssembler code = (stack2Str stack, state2Str state)
-  where (_,stack,state) = run(code, createEmptyStack, createEmptyState)
+  where (_,stack,state) = run (code, createEmptyStack, createEmptyState)
 
 -- Examples:
 -- testAssembler [Push 10,Push 4,Push 3,Sub,Mult] == ("-10","")
@@ -174,16 +180,22 @@ testAssembler code = (stack2Str stack, state2Str state)
 
 -- TODO: Define the types Aexp, Bexp, Stm and Program
 
-data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | Var VarName | Num Integer
-data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | Bool Bool
+data Exp = Aexp | Bexp
 
-data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] | If Bexp [Stm] [Stm]
+data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | VarA VarName | Num Integer
+            deriving (Eq, Show)
+data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | VarB VarName | Bool Bool
+            deriving (Eq, Show)
+data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] | IfThenElse Bexp [Stm] [Stm] | NoopStm
+           deriving (Eq, Show)
+
+type Program = [Stm]
 
 compA :: Aexp -> Code
 compA (AddExp a1 a2) = compA a1 ++ compA a2 ++ [Add]
 compA (MultExp a1 a2) = compA a1 ++ compA a2 ++ [Mult]
 compA (SubExp a1 a2) = compA a1 ++ compA a2 ++ [Sub]
-compA (Var x) = [Fetch x]
+compA (VarA x) = [Fetch x]
 compA (Num n) = [Push n]
 
 compB :: Bexp -> Code
@@ -191,19 +203,70 @@ compB (AndExp b1 b2) = compB b1 ++ compB b2 ++ [And]
 compB (LeExp a1 a2) = compA a1 ++ compA a2 ++ [Le]
 compB (EquExp a1 a2) = compA a1 ++ compA a2 ++ [Equ]
 compB (NegExp b) = compB b ++ [Neg]
+compB (VarB x) = [Fetch x]
 compB (Bool True) = [Tru]
 compB (Bool False) = [Fals]
 
--- compile :: Program -> Code
-compile = undefined -- TODO
+compStm :: Stm -> Code
+compStm (AssignAexp name a) = compA a ++ [Store name]
+compStm (AssignBexp name b) = compB b ++ [Store name]
+compStm (While b stmList) = [Loop (compB b) (compile stmList)]
+compStm (IfThenElse b thenStmList elseStmList) = compB b ++ [Branch (compile thenStmList) (compile elseStmList)]
 
--- parse :: String -> Program
-parse = undefined -- TODO
+compile :: Program -> Code
+compile = concatMap compStm
+
+intParser :: Parser Integer
+intParser = do
+    n <- many1 digit
+    return (read n)
+
+codeParser :: Parser Program
+codeParser = many statementParser <* eof
+
+statementParser :: Parser Stm
+statementParser = try (assignAexpParser) <|> ifParser
+
+aExpParser :: Parser Aexp
+aExpParser = do {
+    exp <- try (Num <$> intParser) <|>
+               (VarA <$> many1 letter);
+    many (letter   <|> digit    <|> char '+' <|>
+          char '-' <|> char '*' <|> char '/');
+    return exp;
+}
+
+bExpParser :: Parser Bexp
+bExpParser = (string "True" >> return (Bool True)) <|>
+             (string "False" >> return (Bool False))
+
+assignAexpParser :: Parser Stm
+assignAexpParser = AssignAexp <$> many1 letter
+                              <*> (string ":=" >> aExpParser <* char ';')
+
+ifParser :: Parser Stm
+ifParser = IfThenElse <$> (string "if" >> char '(' >> bExpParser <* char ')')
+                      <*> (string "then" >> char '(' >> many statementParser <* char ')')
+                      <*> option [NoopStm] (string "else" >> char '(' >> many statementParser <* char ')')
+
+parse :: String -> Program
+parse programString | isRight res = parsedProgram
+                    | isLeft res = throwParseError errorWhileParsing
+    where
+        res = Parsec.parse codeParser "" (cleanSpaces programString)
+        Right parsedProgram = res
+        Left errorWhileParsing = res
+
+cleanSpaces :: String -> String
+cleanSpaces = filter (`notElem` " \n\t")
+
+throwParseError :: ParseError -> Program
+throwParseError errorToThrow = error ("Parse Error in " ++ show errorToThrow ++ "\n")
 
 -- To help you test your parser
 testParser :: String -> (String, String)
 testParser programCode = (stack2Str stack, state2Str state)
-  where (_,stack,state) = run(compile (parse programCode), createEmptyStack, createEmptyState)
+  where (_,stack,state) = run(compile (Main.parse programCode), createEmptyStack, createEmptyState)
 
 -- Examples:
 -- testParser "x := 5; x := x - 1;" == ("","x=4")
