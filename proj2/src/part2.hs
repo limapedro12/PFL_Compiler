@@ -95,7 +95,7 @@ assignAexpParser = AssignAexp <$> many1 letter
 ifParser :: Parser Stm
 ifParser = IfThenElse <$> (string "if" >> char '(' >> bExpParser <* char ')')
                       <*> (string "then" >> char '(' >> many statementParser <* char ')')
-                      <*> (string "else" >> char '(' >> many statementParser <* char ')')
+                      <*> option [] (string "else" >> char '(' >> many statementParser <* char ')')
 
 parse :: String -> Program
 parse programString | isRight res = parsedProgram
