@@ -218,39 +218,93 @@ compStm NoopStm = [Noop]
 compile :: Program -> Code
 compile = concatMap compStm
 
+{-
+Nesta secção definimos um cpnjunto de Parsers (tipo definido pelo Parsec), 
+que são utlizados para transformar a string com o código na representação
+interna definida acima.
+-}
+
+{-
+Parser que faz parse de uma string com inteiro para respetivo inteiro.
+Ex: Parsec.parse intParser "" "123" => Right 123
+-}
 intParser :: Parser Integer
 intParser = do
     n <- many1 digit
     return (read n)
 
+{-
+Função que recebe um Parser e retorna outro Parser que consome os todos os
+espaços, new lines, e tabs, que estejam depois do texto pretendido.
+-}
 lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
 
+{-
+Função que recebe uma string e retorna um Parser que faz parse da respetiva
+string e consome todos os espaços, new lines, e tabs, que se seguem.
+Ex: Parsec.parse (stringWithSpaces "haskell") "" "haskell \n\t  " => Right "haskell"
+-}
 stringWithSpaces :: String -> Parser String
 stringWithSpaces s = lexeme (string s)
 
+{-
+Função que recebe um caráter e retorna um Parser que faz parse do respetivo
+caráter e consome todos os espaços, new lines, e tabs, que se seguem.
+Ex: Parsec.parse (charWithSpaces 'o') "" "o \n\t  " => Right 'o'
+-}
 charWithSpaces :: Char -> Parser Char
 charWithSpaces c = lexeme (char c)
 
+{-
+Parser que faz parse de uma string com código na nossa liguagem e devolve
+uma lista de statements, ou seja, um Program.
+-}
 codeParser :: Parser Program
 codeParser = many commentParser >> many (statementParser <* many commentParser) <* eof
 
+{-
+Parser que faz parse de uma string com uma parte do código (como o código
+dentro de um if statement ou de um while loop) e devolve uma lista de
+statements, ou seja, um Program. Caso este conjunto seja vazio, delvolve 
+uma lista com apenas um elemento, o NoopStm, que posteriormente pode ser 
+transformado numa instrução Noop.
+-}
 blockOfStatementsParser :: Parser Program
 blockOfStatementsParser = option [NoopStm] (many commentParser >> many1 (statementParser <* many commentParser))
 
+{-
+Parser que faz parse de uma string com um statement na nossa linguagem e
+devolve um Stm que representa internamente esse statement
+Ex: Parsec.parse statementParser "" "x := 42;" => Right(AssignAexp "x" (Num 42))
+-}
 statementParser :: Parser Stm
 statementParser = ifParser <|> whileParser <|> noStatementParser <|> assignAexpParser
 
+{-
+Parser que faz parse de um comentário.
+Ex: Parsec.parse commentParser "" "/* lala */" => Right " lala "
+-}
 commentParser :: Parser String
 commentParser = try (lexeme (string "/*" >> manyTill anyChar (string "*/"))) <|>
                      lexeme (string "//" >> manyTill anyChar (char '\n'))
 
+{-
+Lista de nomes reservados, ou seja, nenhum dos elementos desta lista pode
+ser o nome de uma variável.
+-}
 reservedNames :: [String]
-reservedNames = ["if", "then", "else", "and", "not", "or"]
+reservedNames = ["if", "then", "else", "while", "do", "and", "not", "or"]
 
+{-
+Parser que faz parse do nome de uma variável. Este tem que começar com uma
+letra minuscula, e o restante do nome só pode conter letras(maiusculas ou 
+minusculas), números e underscores.
+Ex: Parsec.parse varNameParser "" "certo_numero_1" => Right "" "certo_numero_1"
+-}
 varNameParser :: Parser String
 varNameParser = do
-  first <- letter
+  first <- lower
   rest <- many (letter <|> digit <|> char '_')
   if (first:rest) `notElem` reservedNames
     then return (first:rest) 
@@ -271,13 +325,35 @@ bExpParser = try (string "True" >> return (Bool True)) <|>
              try (string "(True)" >> return (Bool True)) <|>
                  (string "(False)" >> return (Bool False))
 
+{-
+Parser que faz parse de uma string com um assignment statement na nossa
+linguagem e devolve um Stm do formato 'AssignAexp VarName Aexp' que representa
+internamente esse statement.
+Ex: Parsec.parse assignAexpParser "" "x := 42;" => Right (AssignAexp "x" (Num 42))
+-}
 assignAexpParser :: Parser Stm
 assignAexpParser = AssignAexp <$> lexeme varNameParser
                               <*> (stringWithSpaces ":=" >> lexeme aExpParser <* charWithSpaces ';')
 
+{-
+Parser que faz parse de uma string apenas com ';', espaços, tabs ou new
+lines e devolve um NoopStm. Este parser tem como objetivo evitar erros,
+caso o utilizador escreva ';' a mais no inicio ou no fim de outros statements,
+não o parser não devolverá nenhum erro. Se este parser não existisse código
+como este "a := 6;;" devolveria um erro, assim o segundo ';' apenas é
+ignorado.
+Ex: Parsec.parse noStatementParser "" "; \n ; " => Right NoopStm
+-}
 noStatementParser :: Parser Stm
 noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm)
 
+{-
+Parser que faz parse de uma string com um if statement na nossa linguagem 
+e devolve um Stm do formato 'IfThenElse Bexp [Stm] [Stm]' que representa
+internamente esse statement.
+Ex: Parsec.parse ifParser "" "if (True) then x :=1; else y := 2;" => 
+      Right (IfThenElse (Bool True) [AssignAexp "x" (Num 1)] [AssignAexp "y" (Num 2)])
+-}
 ifParser :: Parser Stm
 ifParser = IfThenElse <$> try (stringWithSpaces "if" >> lexeme bExpParser)
                       <*> (stringWithSpaces "then" >> 
@@ -289,12 +365,25 @@ ifParser = IfThenElse <$> try (stringWithSpaces "if" >> lexeme bExpParser)
                             ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
                       <|>   do { s <- statementParser; return [s] }))
 
+{-
+Parser que faz parse de uma string com um while loop statement na nossa 
+linguagem e devolve um Stm do formato 'While Bexp [Stm]' que representa 
+internamente esse statement.
+Ex: Parsec.parse whileParser "" "while (True) do (a :=10; b := 20;)" => 
+      Right (While (Bool True) [AssignAexp "a" (Num 10),AssignAexp "b" (Num 20)])
+-}
 whileParser :: Parser Stm
 whileParser = While <$> try (stringWithSpaces "while" >> lexeme bExpParser)
                     <*> (stringWithSpaces "do" >> 
                         ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
                     <|>   do { s <- statementParser; return [s] }))
 
+{-
+Função que recebe como argumento uma string com um programa na nossa liguagem
+e faz parse do mesmo, retornando o programa na sua representação interna 
+(lista de statements). Se não conseguir devove uma exceção a indicar aonde se
+encontra o erro.
+-}
 parse :: String -> Program
 parse programString | isRight res = parsedProgram
                     | isLeft res = throwParseError errorWhileParsing
@@ -303,20 +392,37 @@ parse programString | isRight res = parsedProgram
         Right parsedProgram = res
         Left errorWhileParsing = res
 
-cleanSpaces :: String -> String
-cleanSpaces = filter (`notElem` " \n\t")
-
+{-
+Função que recebe um ParseError e lança-o, através da função 'error', de
+forma mais inteligível.
+-}
 throwParseError :: ParseError -> Program
 throwParseError errorToThrow = error ("\nParse Error in " ++ show errorToThrow ++ "\n")
 
+{-
+Função que recebe como argumento uma string com o nome de um ficheiro, cujo
+conteudo é um programa na nossa liguagem e faz parse do mesmo, retornando o 
+programa na sua representação interna (lista de statements). Se não conseguir
+devove uma exceção a indicar aonde se encontra o erro.
+-}
 parseFile :: String -> IO [Stm]
 parseFile fileName = do program  <- readFile fileName
                         return (parse program)
 
+{-
+Função que recebe como argumento uma string com o nome de um ficheiro, cujo
+conteudo é um programa na nossa liguagem, executa-o e devolve um par de 
+strings que representam a stack e o armazenamento após a execução.
+-}
 testParserFile :: String -> IO (String, String)
 testParserFile fileName = do programCode  <- readFile fileName
                              return (testParser programCode)
 
+{-
+Função que recebe como argumento uma string com um programa na nossa
+liguagem, executa-o e devolve um par de strings que representam a stack
+e o armazenamento após a execução.
+-}
 -- To help you test your parser
 testParser :: String -> (String, String)
 testParser programCode = (stack2Str stack, state2Str state)
