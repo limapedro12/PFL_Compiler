@@ -9,6 +9,7 @@ import Text.Parsec.Char
 import Control.Monad
 import Data.Either
 -- PFL 2023/24 - Haskell practical assignment quickstart
+-- Updated on 27/12/2023
 
 -- Part 1
 
@@ -165,7 +166,7 @@ run (inst:r, stack, state) = case inst of
 -- To help you test your assembler
 testAssembler :: Code -> (String, String)
 testAssembler code = (stack2Str stack, state2Str state)
-  where (_,stack,state) = run (code, createEmptyStack, createEmptyState)
+  where (_,stack,state) = run(code, createEmptyStack, createEmptyState)
 
 -- Examples:
 -- testAssembler [Push 10,Push 4,Push 3,Sub,Mult] == ("-10","")
@@ -200,9 +201,9 @@ data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] 
 type Program = [Stm]
 
 compA :: Aexp -> Code
-compA (AddExp a1 a2) = compA a1 ++ compA a2 ++ [Add]
-compA (MultExp a1 a2) = compA a1 ++ compA a2 ++ [Mult]
-compA (SubExp a1 a2) = compA a1 ++ compA a2 ++ [Sub]
+compA (AddExp a1 a2) = compA a2 ++ compA a1 ++ [Add]
+compA (MultExp a1 a2) = compA a2 ++ compA a1 ++ [Mult]
+compA (SubExp a1 a2) = compA a2 ++ compA a1 ++ [Sub]
 compA (VarA x) = [Fetch x]
 compA (Num n) = [Push n]
 
@@ -231,7 +232,7 @@ intParser = do
     return (read n)
 
 lexeme :: Parser a -> Parser a
-lexeme p = p <* spaces
+lexeme p = spaces *> p <* spaces
 
 stringWithSpaces :: String -> Parser String
 stringWithSpaces s = lexeme (string s)
@@ -263,14 +264,33 @@ varNameParser = do
     then return (first:rest) 
     else error ("\nYou cannot name a variable " ++ (first:rest) ++ " because it is a reserved name.\n")
 
+-- aExpParser :: Parser Aexp
+-- aExpParser = do {
+--     exp <- try (Num <$> intParser) <|>
+--                (VarA <$> many1 letter);
+--     many (letter   <|> digit    <|> char '+' <|>
+--           char '-' <|> char '*' <|> char '/');
+--     return exp;
+-- }
+
 aExpParser :: Parser Aexp
-aExpParser = do {
-    exp <- try (Num <$> intParser) <|>
-               (VarA <$> many1 letter);
-    many (letter   <|> digit    <|> char '+' <|>
-          char '-' <|> char '*' <|> char '/');
-    return exp;
-}
+aExpParser = buildExpressionParser aOperators aTerm
+
+aOperators = [[Infix (MultExp <$ char '*') AssocLeft],
+              [Infix (AddExp <$ char '+') AssocLeft, Infix (SubExp <$ char '-') AssocLeft]]
+
+aTerm :: Parser Aexp
+aTerm = lexeme term
+  where
+    term = parens (lexeme aExpParser)
+      <|> Num <$> lexeme integer
+      <|> VarA <$> lexeme identifier
+    parens = between (stringWithSpaces "(") (stringWithSpaces ")")
+    integer = read <$> many1 digit
+    identifier = many1 letter
+
+-- bExpParser :: Parser Bexp
+-- bExpParser = buildExpressionParser bOperators bTerm
 
 bExpParser :: Parser Bexp
 bExpParser = try (string "True" >> return (Bool True)) <|>
@@ -327,7 +347,7 @@ testParserFile fileName = do programCode  <- readFile fileName
 -- To help you test your parser
 testParser :: String -> (String, String)
 testParser programCode = (stack2Str stack, state2Str state)
-  where (_,stack,state) = run (compile (parse programCode), createEmptyStack, createEmptyState)
+  where (_,stack,state) = run(compile (parse programCode), createEmptyStack, createEmptyState)
 
 -- Examples:
 -- testParser "x := 5; x := x - 1;" == ("","x=4")
