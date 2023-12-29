@@ -3,12 +3,23 @@
 a := 0;
 // alala oooo iii 
     ifal := 0;
+
+while (True) do (
+
 if (False) 
 then (
     /* dunas */
     // dunas 
     lala := 0;
     //dunas
-) else ( lala := 6; )
+) else ( lala := 6; );
 
 /* dunas */
+
+);
+
+_b := 0;
+
+if(False)then(while(False)do(_p:=23;));
+
+// lala

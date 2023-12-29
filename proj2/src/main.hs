@@ -241,7 +241,7 @@ blockOfStatementsParser = option [NoopStm] (many commentParser >> many1 (stateme
 -- !!!!!!!!!!!!!!!
 
 statementParser :: Parser Stm
-statementParser = ifParser <|> noStatementParser <|> assignAexpParser
+statementParser = ifParser <|> whileParser <|> noStatementParser <|> assignAexpParser
 
 commentParser :: Parser String
 commentParser = try (lexeme (string "/*" >> manyTill anyChar (string "*/"))) <|>
@@ -283,7 +283,10 @@ ifParser = IfThenElse <$> try (stringWithSpaces "if" >> lexeme bExpParser)
                             stringWithSpaces "else" >> charWithSpaces '(' >> 
                             blockOfStatementsParser <* charWithSpaces ')')
 
-
+whileParser :: Parser Stm
+whileParser = While <$> try (stringWithSpaces "while" >> lexeme bExpParser)
+                    <*> (stringWithSpaces "do" >> charWithSpaces '(' >>
+                         blockOfStatementsParser <* charWithSpaces ')')
 
 parse :: String -> Program
 parse programString | isRight res = parsedProgram
