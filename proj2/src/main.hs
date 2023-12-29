@@ -182,19 +182,19 @@ testAssembler code = (stack2Str stack, state2Str state)
 {-
 Tipo de dados que representa uma expressão aritmética
 -}
-data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | VarA VarName | Num Integer
+data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | Var VarName | Num Integer
             deriving (Eq, Show)
 
 {-
 Tipo de dados que representa uma expressão booleana
 -}
-data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | VarB VarName | Bool Bool
+data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | Bool Bool
             deriving (Eq, Show)
 
 {-
 Tipo de dados que representa um statement
 -}
-data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] | IfThenElse Bexp [Stm] [Stm] | NoopStm
+data Stm = Assign VarName Aexp | SequenceOfStatements [Stm] | While Bexp Stm | IfThenElse Bexp Stm Stm | NoopStm
            deriving (Eq, Show)
 
 {-
@@ -205,20 +205,20 @@ type Program = [Stm]
 {-
 Função que recebe uma expressão aritmética na sua representação interna
 (do tipo Aexp) e retorna um conjunto de intruções equivalentes.
-Ex: compA (AddExp (VarA "x") (MultExp (Num 5) (Num 70))) =>
+Ex: compA (AddExp (Var "x") (MultExp (Num 5) (Num 70))) =>
       [Push 70,Push 5,Mult,Fetch "x",Add]
 -}
 compA :: Aexp -> Code
 compA (AddExp a1 a2) = compA a2 ++ compA a1 ++ [Add]
 compA (MultExp a1 a2) = compA a2 ++ compA a1 ++ [Mult]
 compA (SubExp a1 a2) = compA a2 ++ compA a1 ++ [Sub]
-compA (VarA x) = [Fetch x]
+compA (Var x) = [Fetch x]
 compA (Num n) = [Push n]
 
 {-
 Função que recebe uma expressão boleana na sua representação interna (do
 tipo Bexp) e retorna um conjunto de intruções equivalentes.
-Ex: compB (AndExp (EquExp (VarA "x") (Num 2)) (Bool True)) =>
+Ex: compB (AndExp (EquExp (Var "x") (Num 2)) (Bool True)) =>
       [Tru,Push 2,Fetch "x",Equ,And]
 -}
 compB :: Bexp -> Code
@@ -226,27 +226,26 @@ compB (AndExp b1 b2) = compB b2 ++ compB b1 ++ [And]
 compB (LeExp a1 a2) = compA a2 ++ compA a1 ++ [Le]
 compB (EquExp a1 a2) = compA a2 ++ compA a1 ++ [Equ]
 compB (NegExp b) = compB b ++ [Neg]
-compB (VarB x) = [Fetch x]
 compB (Bool True) = [Tru]
 compB (Bool False) = [Fals]
 
 {-
 Função que recebe um statement na sua representação interna (do tipo Stm)
 e retorna um conjunto de intruções equivalentes.
-Ex: compStm (While (Bool True) [AssignAexp "a" (Num 10),AssignAexp "b" (Num 20)]) =>
+Ex: compStm (While (Bool True) [Assign "a" (Num 10),Assign "b" (Num 20)]) =>
       [Loop [Tru] [Push 10,Store "a",Push 20,Store "b"]]
 -}
 compStm :: Stm -> Code
-compStm (AssignAexp name a) = compA a ++ [Store name]
-compStm (AssignBexp name b) = compB b ++ [Store name]
-compStm (While b stmList) = [Loop (compB b) (compile stmList)]
-compStm (IfThenElse b thenStmList elseStmList) = compB b ++ [Branch (compile thenStmList) (compile elseStmList)]
+compStm (Assign name a) = compA a ++ [Store name]
+compStm (While b stmList) = [Loop (compB b) (compStm stmList)]
+compStm (IfThenElse b thenStmList elseStmList) = compB b ++ [Branch (compStm thenStmList) (compStm elseStmList)]
+compStm (SequenceOfStatements stmList) = concatMap compStm stmList
 compStm NoopStm = [Noop]
 
 {-
 Função que recebe um programa na sua representação interna (lista de statements)
 e retorna um conjunto de intruções equivalentes.
-Ex: compile [AssignAexp "y" (AddExp (VarA "x") (Num 1)), AssignAexp "x" (Num 2)] =>
+Ex: compile [Assign "y" (AddExp (Var "x") (Num 1)), Assign "x" (Num 2)] =>
       [Push 1,Fetch "x",Add,Store "y",Push 2,Store "x"]
 -}
 compile :: Program -> Code
@@ -298,22 +297,12 @@ codeParser :: Parser Program
 codeParser = many commentParser >> many (statementParser <* many commentParser) <* eof
 
 {-
-Parser que faz parse de uma string com uma parte do código (como o código
-dentro de um if statement ou de um while loop) e devolve uma lista de
-statements, ou seja, um Program. Caso este conjunto seja vazio, delvolve 
-uma lista com apenas um elemento, o NoopStm, que posteriormente pode ser 
-transformado numa instrução Noop.
--}
-blockOfStatementsParser :: Parser Program
-blockOfStatementsParser = option [NoopStm] (many commentParser >> many1 (statementParser <* many commentParser))
-
-{-
 Parser que faz parse de uma string com um statement na nossa linguagem e
 devolve um Stm que representa internamente esse statement
-Ex: Parsec.parse statementParser "" "x := 42;" => Right(AssignAexp "x" (Num 42))
+Ex: Parsec.parse statementParser "" "x := 42;" => Right(Assign "x" (Num 42))
 -}
 statementParser :: Parser Stm
-statementParser = ifParser <|> whileParser <|> noStatementParser <|> assignAexpParser
+statementParser = ifParser <|> whileParser <|> noStatementParser <|> sequenceOfStatementsParser <|> assignParser
 
 {-
 Parser que faz parse de um comentário.
@@ -347,7 +336,7 @@ varNameParser = do
 aExpParser :: Parser Aexp
 aExpParser = do {
     exp <- try (Num <$> intParser) <|>
-               (VarA <$> many1 letter);
+               (Var <$> many1 letter);
     many (letter   <|> digit    <|> char '+' <|>
           char '-' <|> char '*' <|> char '/');
     return exp;
@@ -361,56 +350,64 @@ bExpParser = try (string "True" >> return (Bool True)) <|>
 
 {-
 Parser que faz parse de uma string com um assignment statement na nossa
-linguagem e devolve um Stm do formato 'AssignAexp VarName Aexp' que representa
+linguagem e devolve um Stm do formato 'Assign VarName Aexp' que representa
 internamente esse statement.
-Ex: Parsec.parse assignAexpParser "" "x := 42;" => Right (AssignAexp "x" (Num 42))
+Ex: Parsec.parse assignParser "" "x := 42;" => Right (Assign "x" (Num 42))
 -}
-assignAexpParser :: Parser Stm
-assignAexpParser = AssignAexp <$> lexeme varNameParser
-                              <*> (stringWithSpaces ":=" >> lexeme aExpParser <* charWithSpaces ';')
+assignParser :: Parser Stm
+assignParser = try (Assign <$> lexeme varNameParser
+                           <*> (stringWithSpaces ":=" >> lexeme aExpParser <* charWithSpaces ';'))
 
 {-
-Parser que faz parse de uma string apenas com ';', espaços, tabs ou new
+Parser que faz parse de uma string com uma parte do código (como o código
+dentro de um if statement ou de um while loop) e devolve uma lista de
+statements, ou seja, um Program. Caso este conjunto seja vazio, delvolve 
+uma lista com apenas um elemento, o NoopStm, que posteriormente pode ser 
+transformado numa instrução Noop.
+-}
+sequenceOfStatementsParser :: Parser Stm
+sequenceOfStatementsParser = try (SequenceOfStatements <$> (charWithSpaces '(' >> 
+                                 (many commentParser >> many1 (statementParser <* many commentParser))
+                                  <* charWithSpaces ')'))
+
+{-
+Parser que faz parse de uma string apenas com ';' ou "()"", espaços, tabs ou new
 lines e devolve um NoopStm. Este parser tem como objetivo evitar erros,
-caso o utilizador escreva ';' a mais no inicio ou no fim de outros statements,
-não o parser não devolverá nenhum erro. Se este parser não existisse código
-como este "a := 6;;" devolveria um erro, assim o segundo ';' apenas é
-ignorado.
+caso o utilizador escreva algum ';' a mais, no inicio ou no fim de outros
+statements, ou caso algum if statement ou while loop não contenham instruções, 
+o parser, não devolverá nenhum erro. Se este parser não existisse código como 
+"a := 6;;" ou "while (x >= 1) do ()" devolveria um erro, e assim estes
+statements apenas são ignorados.
 Ex: Parsec.parse noStatementParser "" "; \n ; " => Right NoopStm
 -}
 noStatementParser :: Parser Stm
-noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm)
+noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm) <|> 
+                    try (stringWithSpaces "()" >> return NoopStm)
 
 {-
 Parser que faz parse de uma string com um if statement na nossa linguagem 
 e devolve um Stm do formato 'IfThenElse Bexp [Stm] [Stm]' que representa
 internamente esse statement.
 Ex: Parsec.parse ifParser "" "if (True) then x :=1; else y := 2;" => 
-      Right (IfThenElse (Bool True) [AssignAexp "x" (Num 1)] [AssignAexp "y" (Num 2)])
+      Right (IfThenElse (Bool True) [Assign "x" (Num 1)] [Assign "y" (Num 2)])
 -}
 ifParser :: Parser Stm
 ifParser = IfThenElse <$> try (stringWithSpaces "if" >> lexeme bExpParser)
-                      <*> (stringWithSpaces "then" >> 
-                          ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
-                      <|>   do { s <- statementParser; return [s] }))
+                      <*> (stringWithSpaces "then" >> statementParser)
                       <*> 
-                          option [NoopStm] (
-                            stringWithSpaces "else" >> 
-                            ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
-                      <|>   do { s <- statementParser; return [s] }))
+                          option NoopStm (
+                            stringWithSpaces "else" >> statementParser)
 
 {-
 Parser que faz parse de uma string com um while loop statement na nossa 
 linguagem e devolve um Stm do formato 'While Bexp [Stm]' que representa 
 internamente esse statement.
 Ex: Parsec.parse whileParser "" "while (True) do (a :=10; b := 20;)" => 
-      Right (While (Bool True) [AssignAexp "a" (Num 10),AssignAexp "b" (Num 20)])
+      Right (While (Bool True) [Assign "a" (Num 10),Assign "b" (Num 20)])
 -}
 whileParser :: Parser Stm
 whileParser = While <$> try (stringWithSpaces "while" >> lexeme bExpParser)
-                    <*> (stringWithSpaces "do" >> 
-                        ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
-                    <|>   do { s <- statementParser; return [s] }))
+                    <*> (stringWithSpaces "do" >> statementParser)
 
 {-
 Função que recebe como argumento uma string com um programa na nossa liguagem
