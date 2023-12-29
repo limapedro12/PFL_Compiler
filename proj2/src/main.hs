@@ -8,6 +8,7 @@ import Text.Parsec.Combinator
 import Text.Parsec.Char
 import Control.Monad
 import Data.Either
+import GHC.Generics (Associativity(LeftAssociative))
 -- PFL 2023/24 - Haskell practical assignment quickstart
 -- Updated on 27/12/2023
 
@@ -166,7 +167,7 @@ run (inst:r, stack, state) = case inst of
 -- To help you test your assembler
 testAssembler :: Code -> (String, String)
 testAssembler code = (stack2Str stack, state2Str state)
-  where (_,stack,state) = run(code, createEmptyStack, createEmptyState)
+  where (_,stack,state) = run (code, createEmptyStack, createEmptyState)
 
 -- Examples:
 -- testAssembler [Push 10,Push 4,Push 3,Sub,Mult] == ("-10","")
@@ -193,7 +194,7 @@ data Exp = Aexp | Bexp
 
 data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | VarA VarName | Num Integer
             deriving (Eq, Show)
-data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | VarB VarName | Bool Bool
+data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | AEquExp Aexp Aexp | BEquExp Bexp Bexp | NegExp Bexp | VarB VarName | Bool Bool
             deriving (Eq, Show)
 data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] | IfThenElse Bexp [Stm] [Stm] | NoopStm
            deriving (Eq, Show)
@@ -208,9 +209,10 @@ compA (VarA x) = [Fetch x]
 compA (Num n) = [Push n]
 
 compB :: Bexp -> Code
-compB (AndExp b1 b2) = compB b1 ++ compB b2 ++ [And]
-compB (LeExp a1 a2) = compA a1 ++ compA a2 ++ [Le]
-compB (EquExp a1 a2) = compA a1 ++ compA a2 ++ [Equ]
+compB (AndExp b1 b2) = compB b2 ++ compB b1 ++ [And]
+compB (LeExp a1 a2) = compA a2 ++ compA a1 ++ [Le]
+compB (AEquExp a1 a2) = compA a2 ++ compA a1 ++ [Equ]
+compB (BEquExp b1 b2) = compB b2 ++ compB b1 ++ [Equ]
 compB (NegExp b) = compB b ++ [Neg]
 compB (VarB x) = [Fetch x]
 compB (Bool True) = [Tru]
@@ -261,7 +263,7 @@ varNameParser = do
   first <- letter
   rest <- many (letter <|> digit <|> char '_')
   if (first:rest) `notElem` reservedNames
-    then return (first:rest) 
+    then return (first:rest)
     else error ("\nYou cannot name a variable " ++ (first:rest) ++ " because it is a reserved name.\n")
 
 -- aExpParser :: Parser Aexp
@@ -284,19 +286,41 @@ aTerm = lexeme term
   where
     term = parens (lexeme aExpParser)
       <|> Num <$> lexeme integer
-      <|> VarA <$> lexeme identifier
+      <|> VarA <$> lexeme varName
     parens = between (stringWithSpaces "(") (stringWithSpaces ")")
     integer = read <$> many1 digit
-    identifier = many1 letter
-
--- bExpParser :: Parser Bexp
--- bExpParser = buildExpressionParser bOperators bTerm
+    varName = many1 letter
 
 bExpParser :: Parser Bexp
-bExpParser = try (string "True" >> return (Bool True)) <|>
-             try (string "False" >> return (Bool False)) <|>
-             try (string "(True)" >> return (Bool True)) <|>
-                 (string "(False)" >> return (Bool False))
+bExpParser = buildExpressionParser bOperators bTerm
+
+bOperators = [[Prefix (NegExp <$ stringWithSpaces "not")],
+              [Infix (AndExp <$ stringWithSpaces "and") AssocLeft]]
+
+bTerm :: Parser Bexp
+bTerm = lexeme term
+  where
+    term = parens (lexeme bExpParser)
+      <|> Bool False <$ lexeme (stringWithSpaces "False")
+      <|> Bool True <$ lexeme (stringWithSpaces "True")
+      <|> arithmeticComparisonExpression
+      <|> logicalComparisonExpression
+    parens = between (stringWithSpaces "(") (stringWithSpaces ")")
+
+arithmeticComparisonExpression =
+  do a1 <- aExpParser
+     op <- arithmeticComparisonOperators
+     a2 <- aExpParser
+     return (op a1 a2)
+
+arithmeticComparisonOperators = (stringWithSpaces "<=" >> return LeExp)
+                            <|> (stringWithSpaces "==" >> return AEquExp)
+
+logicalComparisonExpression =
+  do b1 <- bExpParser
+     op <- (stringWithSpaces "=" >> return BEquExp)
+     b2 <- bExpParser
+     return (op b1 b2)
 
 assignAexpParser :: Parser Stm
 assignAexpParser = AssignAexp <$> lexeme varNameParser
@@ -307,18 +331,18 @@ noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm)
 
 ifParser :: Parser Stm
 ifParser = IfThenElse <$> try (stringWithSpaces "if" >> lexeme bExpParser)
-                      <*> (stringWithSpaces "then" >> 
+                      <*> (stringWithSpaces "then" >>
                           ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
                       <|>   do { s <- statementParser; return [s] }))
-                      <*> 
+                      <*>
                           option [NoopStm] (
-                            stringWithSpaces "else" >> 
+                            stringWithSpaces "else" >>
                             ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
                       <|>   do { s <- statementParser; return [s] }))
 
 whileParser :: Parser Stm
 whileParser = While <$> try (stringWithSpaces "while" >> lexeme bExpParser)
-                    <*> (stringWithSpaces "do" >> 
+                    <*> (stringWithSpaces "do" >>
                         ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
                     <|>   do { s <- statementParser; return [s] }))
 
@@ -347,7 +371,7 @@ testParserFile fileName = do programCode  <- readFile fileName
 -- To help you test your parser
 testParser :: String -> (String, String)
 testParser programCode = (stack2Str stack, state2Str state)
-  where (_,stack,state) = run(compile (parse programCode), createEmptyStack, createEmptyState)
+  where (_,stack,state) = run (compile (parse programCode), createEmptyStack, createEmptyState)
 
 -- Examples:
 -- testParser "x := 5; x := x - 1;" == ("","x=4")
