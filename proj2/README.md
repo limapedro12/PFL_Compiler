@@ -2,6 +2,8 @@
 
 ## Grupo e Distribuição de Trabalho
 
+Grupo **T05_G01**:
+
 - Pedro de Almeida Lima (up202108806@up.pt) - contributo de 
 - Pedro Simão Januário Vieira (up202108768@up.pt) - contributo de
 
