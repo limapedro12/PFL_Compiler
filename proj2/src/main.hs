@@ -235,10 +235,8 @@ charWithSpaces c = lexeme (char c)
 codeParser :: Parser Program
 codeParser = many commentParser >> many (statementParser <* many commentParser) <* eof
 
--- !!!!!!!!!!!!!!!!!!!!!!!
 blockOfStatementsParser :: Parser Program
 blockOfStatementsParser = option [NoopStm] (many commentParser >> many1 (statementParser <* many commentParser))
--- !!!!!!!!!!!!!!!
 
 statementParser :: Parser Stm
 statementParser = ifParser <|> whileParser <|> noStatementParser <|> assignAexpParser
