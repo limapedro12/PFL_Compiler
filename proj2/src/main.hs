@@ -232,7 +232,7 @@ intParser = do
     return (read n)
 
 lexeme :: Parser a -> Parser a
-lexeme p = spaces *> p <* spaces
+lexeme p = p <* spaces
 
 stringWithSpaces :: String -> Parser String
 stringWithSpaces s = lexeme (string s)
@@ -276,8 +276,8 @@ varNameParser = do
 aExpParser :: Parser Aexp
 aExpParser = buildExpressionParser aOperators aTerm
 
-aOperators = [[Infix (MultExp <$ char '*') AssocLeft],
-              [Infix (AddExp <$ char '+') AssocLeft, Infix (SubExp <$ char '-') AssocLeft]]
+aOperators = [[Infix (MultExp <$ lexeme (char '*')) AssocLeft],
+              [Infix (AddExp <$ lexeme (char '+')) AssocLeft, Infix (SubExp <$ lexeme (char '-')) AssocLeft]]
 
 aTerm :: Parser Aexp
 aTerm = lexeme term
