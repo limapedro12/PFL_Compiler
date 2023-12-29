@@ -1,7 +1,7 @@
 // dunas
 i := 0;
 // alala oooo iii 
-g := 0;;();
+g := 25;;();
 
 h := 0;
 ()
@@ -29,4 +29,4 @@ if(False) then(
 
 // lala
 
-(a:=0; if(True)then() j:=0 ;)
+(a:=70; if(True)then() j:=0 ;)

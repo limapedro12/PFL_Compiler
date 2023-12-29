@@ -169,7 +169,7 @@ testAssembler code = (stack2Str stack, state2Str state)
 -- Examples:
 -- testAssembler [Push 10,Push 4,Push 3,Sub,Mult] == ("-10","")
 -- testAssembler [Fals,Push 3,Tru,Store "var",Store "a", Store "someVar"] == ("","a=3,someVar=False,var=True")
--- testAssembler [Fals,Store "var",Fetch "var"] == ("False","var=False")
+-- testAssembler [rFals,Store "va",Fetch "var"] == ("False","var=False")
 -- testAssembler [Push (-20),Tru,Fals] == ("False,True,-20","")
 -- testAssembler [Push (-20),Tru,Tru,Neg] == ("False,True,-20","")
 -- testAssembler [Push (-20),Tru,Tru,Neg,Equ] == ("False,-20","")
