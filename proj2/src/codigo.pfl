@@ -1,25 +1,24 @@
 // dunas
-
-a := 0;
+i := 0;
 // alala oooo iii 
-    ifal := 0;
+g := 0;
 
 while (True) do (
+    if (False) 
+    then lala := 0;
+    else lala := 6;;
+)
 
 if (False) 
-then (
-    /* dunas */
-    // dunas 
-    lala := 0;
-    //dunas
-) else ( lala := 6; );
+then lala := 0;
+else lala := 6;;
 
 /* dunas */
 
+b := 0;
+
+if(False) then( 
+    while (False) do p:=23;
 );
-
-_b := 0;
-
-if(False)then(while(False)do(_p:=23;));
 
 // lala

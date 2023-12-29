@@ -246,11 +246,17 @@ statementParser = ifParser <|> whileParser <|> noStatementParser <|> assignAexpP
 commentParser :: Parser String
 commentParser = try (lexeme (string "/*" >> manyTill anyChar (string "*/"))) <|>
                      lexeme (string "//" >> manyTill anyChar (char '\n'))
+
+reservedNames :: [String]
+reservedNames = ["if", "then", "else", "and", "not", "or"]
+
 varNameParser :: Parser String
 varNameParser = do
-  first <- letter <|> char '_'
+  first <- letter
   rest <- many (letter <|> digit <|> char '_')
-  return (first:rest)
+  if (first:rest) `notElem` reservedNames
+    then return (first:rest) 
+    else error ("\nYou cannot name a variable " ++ (first:rest) ++ " because it is a reserved name.\n")
 
 aExpParser :: Parser Aexp
 aExpParser = do {
@@ -276,17 +282,20 @@ noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm)
 
 ifParser :: Parser Stm
 ifParser = IfThenElse <$> try (stringWithSpaces "if" >> lexeme bExpParser)
-                      <*> (stringWithSpaces "then" >> charWithSpaces '(' >>
-                           blockOfStatementsParser <* charWithSpaces ')')
+                      <*> (stringWithSpaces "then" >> 
+                          ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
+                      <|>   do { s <- statementParser; return [s] }))
                       <*> 
                           option [NoopStm] (
-                            stringWithSpaces "else" >> charWithSpaces '(' >> 
-                            blockOfStatementsParser <* charWithSpaces ')')
+                            stringWithSpaces "else" >> 
+                            ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
+                      <|>   do { s <- statementParser; return [s] }))
 
 whileParser :: Parser Stm
 whileParser = While <$> try (stringWithSpaces "while" >> lexeme bExpParser)
-                    <*> (stringWithSpaces "do" >> charWithSpaces '(' >>
-                         blockOfStatementsParser <* charWithSpaces ')')
+                    <*> (stringWithSpaces "do" >> 
+                        ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
+                    <|>   do { s <- statementParser; return [s] }))
 
 parse :: String -> Program
 parse programString | isRight res = parsedProgram
