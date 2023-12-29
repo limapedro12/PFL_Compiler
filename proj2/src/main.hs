@@ -1,6 +1,7 @@
 import Distribution.TestSuite(TestInstance(name))
 import Data.List(sortOn)
-import Text.Parsec as Parsec hiding (State)
+import Text.Parsec (ParseError,try,char,digit,letter,string,eof,many1,option,(<|>),many)
+import qualified Text.Parsec as Parsec (parse)
 import Text.Parsec.String
 import Text.Parsec.Expr
 import Text.Parsec.Combinator
@@ -212,6 +213,7 @@ compStm (AssignAexp name a) = compA a ++ [Store name]
 compStm (AssignBexp name b) = compB b ++ [Store name]
 compStm (While b stmList) = [Loop (compB b) (compile stmList)]
 compStm (IfThenElse b thenStmList elseStmList) = compB b ++ [Branch (compile thenStmList) (compile elseStmList)]
+compStm NoopStm = [Noop]
 
 compile :: Program -> Code
 compile = concatMap compStm
@@ -221,11 +223,34 @@ intParser = do
     n <- many1 digit
     return (read n)
 
+lexeme :: Parser a -> Parser a
+lexeme p = p <* spaces
+
+stringWithSpaces :: String -> Parser String
+stringWithSpaces s = lexeme (string s)
+
+charWithSpaces :: Char -> Parser Char
+charWithSpaces c = lexeme (char c)
+
 codeParser :: Parser Program
-codeParser = many statementParser <* eof
+codeParser = many commentParser >> many (statementParser <* many commentParser) <* eof
+
+-- !!!!!!!!!!!!!!!!!!!!!!!
+blockOfStatementsParser :: Parser Program
+blockOfStatementsParser = option [NoopStm] (many commentParser >> many1 (statementParser <* many commentParser))
+-- !!!!!!!!!!!!!!!
 
 statementParser :: Parser Stm
-statementParser = try (assignAexpParser) <|> ifParser
+statementParser = ifParser <|> noStatementParser <|> assignAexpParser
+
+commentParser :: Parser String
+commentParser = try (lexeme (string "/*" >> manyTill anyChar (string "*/"))) <|>
+                     lexeme (string "//" >> manyTill anyChar (char '\n'))
+varNameParser :: Parser String
+varNameParser = do
+  first <- letter <|> char '_'
+  rest <- many (letter <|> digit <|> char '_')
+  return (first:rest)
 
 aExpParser :: Parser Aexp
 aExpParser = do {
@@ -237,23 +262,34 @@ aExpParser = do {
 }
 
 bExpParser :: Parser Bexp
-bExpParser = (string "True" >> return (Bool True)) <|>
-             (string "False" >> return (Bool False))
+bExpParser = try (string "True" >> return (Bool True)) <|>
+             try (string "False" >> return (Bool False)) <|>
+             try (string "(True)" >> return (Bool True)) <|>
+                 (string "(False)" >> return (Bool False))
 
 assignAexpParser :: Parser Stm
-assignAexpParser = AssignAexp <$> many1 letter
-                              <*> (string ":=" >> aExpParser <* char ';')
+assignAexpParser = AssignAexp <$> lexeme varNameParser
+                              <*> (stringWithSpaces ":=" >> lexeme aExpParser <* charWithSpaces ';')
+
+noStatementParser :: Parser Stm
+noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm)
 
 ifParser :: Parser Stm
-ifParser = IfThenElse <$> (string "if" >> char '(' >> bExpParser <* char ')')
-                      <*> (string "then" >> char '(' >> many statementParser <* char ')')
-                      <*> option [NoopStm] (string "else" >> char '(' >> many statementParser <* char ')')
+ifParser = IfThenElse <$> try (stringWithSpaces "if" >> lexeme bExpParser)
+                      <*> (stringWithSpaces "then" >> charWithSpaces '(' >>
+                           blockOfStatementsParser <* charWithSpaces ')')
+                      <*> 
+                          option [NoopStm] (
+                            stringWithSpaces "else" >> charWithSpaces '(' >> 
+                            blockOfStatementsParser <* charWithSpaces ')')
+
+
 
 parse :: String -> Program
 parse programString | isRight res = parsedProgram
                     | isLeft res = throwParseError errorWhileParsing
     where
-        res = Parsec.parse codeParser "" (cleanSpaces programString)
+        res = Parsec.parse codeParser "" programString
         Right parsedProgram = res
         Left errorWhileParsing = res
 
@@ -261,12 +297,20 @@ cleanSpaces :: String -> String
 cleanSpaces = filter (`notElem` " \n\t")
 
 throwParseError :: ParseError -> Program
-throwParseError errorToThrow = error ("Parse Error in " ++ show errorToThrow ++ "\n")
+throwParseError errorToThrow = error ("\nParse Error in " ++ show errorToThrow ++ "\n")
+
+parseFile :: String -> IO [Stm]
+parseFile fileName = do program  <- readFile fileName
+                        return (parse program)
+
+testParserFile :: String -> IO (String, String)
+testParserFile fileName = do programCode  <- readFile fileName
+                             return (testParser programCode)
 
 -- To help you test your parser
 testParser :: String -> (String, String)
 testParser programCode = (stack2Str stack, state2Str state)
-  where (_,stack,state) = run(compile (Main.parse programCode), createEmptyStack, createEmptyState)
+  where (_,stack,state) = run (compile (parse programCode), createEmptyStack, createEmptyState)
 
 -- Examples:
 -- testParser "x := 5; x := x - 1;" == ("","x=4")
