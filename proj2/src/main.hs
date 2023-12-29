@@ -179,35 +179,63 @@ testAssembler code = (stack2Str stack, state2Str state)
 
 -- Part 2
 
--- TODO: Define the types Aexp, Bexp, Stm and Program
-
-data Exp = Aexp | Bexp
-
+{-
+Tipo de dados que representa uma expressão aritmética
+-}
 data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | VarA VarName | Num Integer
             deriving (Eq, Show)
+
+{-
+Tipo de dados que representa uma expressão booleana
+-}
 data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | VarB VarName | Bool Bool
             deriving (Eq, Show)
+
+{-
+Tipo de dados que representa um statement
+-}
 data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] | IfThenElse Bexp [Stm] [Stm] | NoopStm
            deriving (Eq, Show)
 
+{-
+Tipo de dados que representa um programa (lista de statements)
+-}
 type Program = [Stm]
 
+{-
+Função que recebe uma expressão aritmética na sua representação interna
+(do tipo Aexp) e retorna um conjunto de intruções equivalentes.
+Ex: compA (AddExp (VarA "x") (MultExp (Num 5) (Num 70))) =>
+      [Push 70,Push 5,Mult,Fetch "x",Add]
+-}
 compA :: Aexp -> Code
-compA (AddExp a1 a2) = compA a1 ++ compA a2 ++ [Add]
-compA (MultExp a1 a2) = compA a1 ++ compA a2 ++ [Mult]
-compA (SubExp a1 a2) = compA a1 ++ compA a2 ++ [Sub]
+compA (AddExp a1 a2) = compA a2 ++ compA a1 ++ [Add]
+compA (MultExp a1 a2) = compA a2 ++ compA a1 ++ [Mult]
+compA (SubExp a1 a2) = compA a2 ++ compA a1 ++ [Sub]
 compA (VarA x) = [Fetch x]
 compA (Num n) = [Push n]
 
+{-
+Função que recebe uma expressão boleana na sua representação interna (do
+tipo Bexp) e retorna um conjunto de intruções equivalentes.
+Ex: compB (AndExp (EquExp (VarA "x") (Num 2)) (Bool True)) =>
+      [Tru,Push 2,Fetch "x",Equ,And]
+-}
 compB :: Bexp -> Code
-compB (AndExp b1 b2) = compB b1 ++ compB b2 ++ [And]
-compB (LeExp a1 a2) = compA a1 ++ compA a2 ++ [Le]
-compB (EquExp a1 a2) = compA a1 ++ compA a2 ++ [Equ]
+compB (AndExp b1 b2) = compB b2 ++ compB b1 ++ [And]
+compB (LeExp a1 a2) = compA a2 ++ compA a1 ++ [Le]
+compB (EquExp a1 a2) = compA a2 ++ compA a1 ++ [Equ]
 compB (NegExp b) = compB b ++ [Neg]
 compB (VarB x) = [Fetch x]
 compB (Bool True) = [Tru]
 compB (Bool False) = [Fals]
 
+{-
+Função que recebe um statement na sua representação interna (do tipo Stm)
+e retorna um conjunto de intruções equivalentes.
+Ex: compStm (While (Bool True) [AssignAexp "a" (Num 10),AssignAexp "b" (Num 20)]) =>
+      [Loop [Tru] [Push 10,Store "a",Push 20,Store "b"]]
+-}
 compStm :: Stm -> Code
 compStm (AssignAexp name a) = compA a ++ [Store name]
 compStm (AssignBexp name b) = compB b ++ [Store name]
@@ -215,13 +243,19 @@ compStm (While b stmList) = [Loop (compB b) (compile stmList)]
 compStm (IfThenElse b thenStmList elseStmList) = compB b ++ [Branch (compile thenStmList) (compile elseStmList)]
 compStm NoopStm = [Noop]
 
+{-
+Função que recebe um programa na sua representação interna (lista de statements)
+e retorna um conjunto de intruções equivalentes.
+Ex: compile [AssignAexp "y" (AddExp (VarA "x") (Num 1)), AssignAexp "x" (Num 2)] =>
+      [Push 1,Fetch "x",Add,Store "y",Push 2,Store "x"]
+-}
 compile :: Program -> Code
 compile = concatMap compStm
 
 {-
-Nesta secção definimos um cpnjunto de Parsers (tipo definido pelo Parsec), 
-que são utlizados para transformar a string com o código na representação
-interna definida acima.
+Na secção seguinte, definimos um conjunto de Parsers (do tipo definido pelo 
+Parsec), que são utlizados para transformar a string com o código na 
+representação interna definida acima.
 -}
 
 {-
