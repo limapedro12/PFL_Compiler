@@ -8,7 +8,11 @@ import Text.Parsec.Combinator
 import Text.Parsec.Char
 import Control.Monad
 import Data.Either
+import GHC.Generics (Associativity(LeftAssociative))
+import qualified Data.Functor.Identity
+import qualified Text.Parsec.Prim
 -- PFL 2023/24 - Haskell practical assignment quickstart
+-- Updated on 27/12/2023
 
 -- Part 1
 
@@ -127,6 +131,7 @@ neg stack = push result (pop stack)
             where result = negValue (top stack)
 
 fetch :: VarName -> Stack -> State -> Stack
+fetch _ _ [] = error "Run-time error"
 fetch varName oldStack ((headName, headVal):stateTail) | headName /= varName = fetch varName oldStack stateTail
                                                        | otherwise = push headVal oldStack
 
@@ -178,6 +183,12 @@ testAssembler code = (stack2Str stack, state2Str state)
 -- testAssembler [Push (-20),Push (-21), Le] == ("True","")
 -- testAssembler [Push 5,Store "x",Push 1,Fetch "x",Sub,Store "x"] == ("","x=4")
 -- testAssembler [Push 10,Store "i",Push 1,Store "fact",Loop [Push 1,Fetch "i",Equ,Neg] [Fetch "i",Fetch "fact",Mult,Store "fact",Push 1,Fetch "i",Sub,Store "i"]] == ("","fact=3628800,i=1")
+-- If you test:
+-- testAssembler [Push 1,Push 2,And]
+-- You should get an exception with the string: "Run-time error"
+-- If you test:
+-- testAssembler [Tru,Tru,Store "y", Fetch "x",Tru]
+-- You should get an exception with the string: "Run-time error"
 
 -- Part 2
 
@@ -190,7 +201,7 @@ data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | Var VarNam
 {-
 Tipo de dados que representa uma expressão booleana
 -}
-data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | EquExp Aexp Aexp | NegExp Bexp | Bool Bool
+data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | AEquExp Aexp Aexp | BEquExp Bexp Bexp | NegExp Bexp | Bool Bool
             deriving (Eq, Show)
 
 {-
@@ -226,7 +237,8 @@ Ex: compB (AndExp (EquExp (Var "x") (Num 2)) (Bool True)) =>
 compB :: Bexp -> Code
 compB (AndExp b1 b2) = compB b2 ++ compB b1 ++ [And]
 compB (LeExp a1 a2) = compA a2 ++ compA a1 ++ [Le]
-compB (EquExp a1 a2) = compA a2 ++ compA a1 ++ [Equ]
+compB (AEquExp a1 a2) = compA a2 ++ compA a1 ++ [Equ]
+compB (BEquExp b1 b2) = compB b2 ++ compB b1 ++ [Equ]
 compB (NegExp b) = compB b ++ [Neg]
 compB (Bool True) = [Tru]
 compB (Bool False) = [Fals]
@@ -332,23 +344,52 @@ varNameParser = do
   first <- lower
   rest <- many (letter <|> digit <|> char '_')
   if (first:rest) `notElem` reservedNames
-    then return (first:rest) 
+    then return (first:rest)
     else error ("\nYou cannot name a variable " ++ (first:rest) ++ " because it is a reserved name.\n")
 
 aExpParser :: Parser Aexp
-aExpParser = do {
-    exp <- try (Num <$> intParser) <|>
-               (Var <$> many1 letter);
-    many (letter   <|> digit    <|> char '+' <|>
-          char '-' <|> char '*' <|> char '/');
-    return exp;
-}
+aExpParser = buildExpressionParser aOperators aTerm
+
+aOperators :: [[Operator String () Data.Functor.Identity.Identity Aexp]]
+aOperators = [[Infix (MultExp <$ charWithSpaces '*') AssocLeft],
+              [Infix (AddExp <$ charWithSpaces '+') AssocLeft, Infix (SubExp <$ charWithSpaces '-') AssocLeft]]
+
+aTerm :: Parser Aexp
+aTerm = lexeme term
+  where
+    term = try (parens (lexeme aExpParser))
+      <|> try (Num <$> lexeme intParser)
+      <|> try (VarA <$> lexeme varNameParser)
+    parens = between (stringWithSpaces "(") (stringWithSpaces ")")
 
 bExpParser :: Parser Bexp
-bExpParser = try (string "True" >> return (Bool True)) <|>
-             try (string "False" >> return (Bool False)) <|>
-             try (string "(True)" >> return (Bool True)) <|>
-                 (string "(False)" >> return (Bool False))
+bExpParser = buildExpressionParser bOperators bTerm
+
+bOperators :: [[Operator String () Data.Functor.Identity.Identity Bexp]]
+bOperators = [[Prefix (NegExp <$ stringWithSpaces "not")],
+              [Infix (BEquExp <$ charWithSpaces '=') AssocNone],
+              [Infix (AndExp <$ stringWithSpaces "and") AssocLeft]]
+
+bTerm :: Parser Bexp
+bTerm = lexeme term
+  where
+    term = try (parens (lexeme bExpParser))
+      <|> try (lexeme arithmeticComparisonParser)
+      <|> try (NegExp <$> (stringWithSpaces "not" >> bExpParser))
+      <|> try (Bool False <$ lexeme (stringWithSpaces "False"))
+      <|> try (Bool True <$ lexeme (stringWithSpaces "True"))
+    parens = between (stringWithSpaces "(") (stringWithSpaces ")")
+
+arithmeticComparisonParser :: Text.Parsec.Prim.ParsecT   String () Data.Functor.Identity.Identity Bexp
+arithmeticComparisonParser =
+  do a1 <- aExpParser
+     op <- arithmeticComparisonOperators
+     a2 <- aExpParser
+     return (op a1 a2)
+
+arithmeticComparisonOperators :: Text.Parsec.Prim.ParsecT   String () Data.Functor.Identity.Identity (Aexp -> Aexp -> Bexp)
+arithmeticComparisonOperators = (stringWithSpaces "<=" >> return LeExp)
+                            <|> (stringWithSpaces "==" >> return AEquExp)
 
 {-
 Parser que faz parse de uma string com um assignment statement na nossa
@@ -463,9 +504,14 @@ testParser programCode = (stack2Str stack, state2Str state)
 
 -- Examples:
 -- testParser "x := 5; x := x - 1;" == ("","x=4")
--- testParser "if (not True and 2 <= 5 = 3 == 4) then x :=1 else y := 2" == ("","y=2")
--- testParser "x := 42; if x <= 43 then x := 1; else (x := 33; x := x+1;)" == ("","x=1")
+-- testParser "x := 0 - 2;" == ("","x=-2")
+-- testParser "if (not True and 2 <= 5 = 3 == 4) then x :=1; else y := 2;" == ("","y=2")
+-- testParser "x := 42; if x <= 43 then x := 1; else (x := 33; x := x+1;);" == ("","x=1")
 -- testParser "x := 42; if x <= 43 then x := 1; else x := 33; x := x+1;" == ("","x=2")
 -- testParser "x := 42; if x <= 43 then x := 1; else x := 33; x := x+1; z := x+x;" == ("","x=2,z=4")
+-- testParser "x := 44; if x <= 43 then x := 1; else (x := 33; x := x+1;); y := x*2;" == ("","x=34,y=68")
+-- testParser "x := 42; if x <= 43 then (x := 33; x := x+1;) else x := 1;" == ("","x=34")
+-- testParser "if (1 == 0+1 = 2+1 == 3) then x := 1; else x := 2;" == ("","x=1")
+-- testParser "if (1 == 0+1 = (2+1 == 4)) then x := 1; else x := 2;" == ("","x=2")
 -- testParser "x := 2; y := (x - 3)*(4 + 2*3); z := x +x*(2);" == ("","x=2,y=-10,z=6")
 -- testParser "i := 10; fact := 1; while (not(i == 1)) do (fact := fact * i; i := i - 1;);" == ("","fact=3628800,i=1")
