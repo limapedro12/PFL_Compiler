@@ -57,11 +57,11 @@ state2Str state = foldr (\x y -> if y /= "" then printVar x ++ "," ++ y else pri
 -- Stack operations
 top :: Stack -> VarValue
 top (x:_) = x
-top [] = error "\n The Stack is empty, so you cannot use it's top value\n"
+top [] = error "Run-time error"
 
 pop :: Stack -> Stack
 pop (_:xs) = xs
-pop [] = error "\n The Stack is empty, so you cannot use it's top value\n"
+pop [] = error "Run-time error"
 
 push :: VarValue -> Stack -> Stack
 push x stack = x:stack
@@ -69,7 +69,7 @@ push x stack = x:stack
 -- Instruction set
 addValues :: VarValue -> VarValue -> VarValue
 addValues (IntegerValue a) (IntegerValue b) = IntegerValue (a + b)
-addValues _ _ = error "\n You can only add Integres\n"
+addValues _ _ = error "Run-time error"
 
 add :: Stack -> Stack
 add stack = push result (pop (pop stack))
@@ -77,7 +77,7 @@ add stack = push result (pop (pop stack))
 
 multValues :: VarValue -> VarValue -> VarValue
 multValues (IntegerValue a) (IntegerValue b) = IntegerValue (a * b)
-multValues _ _ = error "\n You can only multiply Integres\n"
+multValues _ _ = error "Run-time error"
 
 mult :: Stack -> Stack
 mult stack = push result (pop (pop stack))
@@ -85,7 +85,7 @@ mult stack = push result (pop (pop stack))
 
 subValues :: VarValue -> VarValue -> VarValue
 subValues (IntegerValue a) (IntegerValue b) = IntegerValue (a - b)
-subValues _ _ = error "\n You can only subtract Integres\n"
+subValues _ _ = error "Run-time error"
 
 sub :: Stack -> Stack
 sub stack = push result (pop (pop stack))
@@ -100,7 +100,7 @@ false = push (BoolValue False)
 eqValues :: VarValue -> VarValue -> VarValue
 eqValues (IntegerValue a) (IntegerValue b) = BoolValue (a == b)
 eqValues (BoolValue a) (BoolValue b) = BoolValue (a == b)
-eqValues _ _ = error "\n With Eq, you can only compare Integres or Bools\n"
+eqValues _ _ = error "Run-time error"
 
 eq :: Stack -> Stack
 eq stack = push result (pop (pop stack))
@@ -108,7 +108,7 @@ eq stack = push result (pop (pop stack))
 
 leValues :: VarValue -> VarValue -> VarValue
 leValues (IntegerValue a) (IntegerValue b) = BoolValue (a <= b)
-leValues _ _ = error "\n With Le, you can only compare Integres\n"
+leValues _ _ = error "Run-time error"
 
 le :: Stack -> Stack
 le stack = push result (pop (pop stack))
@@ -116,7 +116,7 @@ le stack = push result (pop (pop stack))
 
 andValues :: VarValue -> VarValue -> VarValue
 andValues (BoolValue a) (BoolValue b) = BoolValue (a && b)
-andValues _ _ = error "\n With And, you can only compare Bools\n"
+andValues _ _ = error "Run-time error"
 
 and :: Stack -> Stack
 and stack = push result (pop (pop stack))
@@ -124,7 +124,7 @@ and stack = push result (pop (pop stack))
 
 negValue :: VarValue -> VarValue
 negValue (BoolValue a) = BoolValue (not a)
-negValue _ = error "\n You can only negate Bools\n"
+negValue _ = error "Run-time error"
 
 neg :: Stack -> Stack
 neg stack = push result (pop stack)
@@ -359,7 +359,7 @@ aTerm = lexeme term
   where
     term = try (parens (lexeme aExpParser))
       <|> try (Num <$> lexeme intParser)
-      <|> try (VarA <$> lexeme varNameParser)
+      <|> try (Var <$> lexeme varNameParser)
     parens = between (stringWithSpaces "(") (stringWithSpaces ")")
 
 bExpParser :: Parser Bexp
