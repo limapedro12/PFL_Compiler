@@ -11,6 +11,7 @@ import Data.Either
 import GHC.Generics (Associativity(LeftAssociative))
 import qualified Data.Functor.Identity
 import qualified Text.Parsec.Prim
+import Data.Binary.Get (lookAhead)
 -- PFL 2023/24 - Haskell practical assignment quickstart
 -- Updated on 27/12/2023
 
@@ -359,7 +360,7 @@ aTerm = lexeme term
   where
     term = try (parens (lexeme aExpParser))
       <|> try (Num <$> lexeme intParser)
-      <|> try (VarA <$> lexeme varNameParser)
+      <|> try (Var <$> lexeme varNameParser)
     parens = between (stringWithSpaces "(") (stringWithSpaces ")")
 
 bExpParser :: Parser Bexp
@@ -435,7 +436,8 @@ Ex: Parsec.parse ifParser "" "if (True) then x :=1; else y := 2;" =>
       Right (IfThenElse (Bool True) [Assign "x" (Num 1)] [Assign "y" (Num 2)])
 -}
 ifParser :: Parser Stm
-ifParser = IfThenElse <$> try (stringWithSpaces "if" >> lexeme bExpParser)
+ifParser = IfThenElse <$> (try (string "if" >> Text.Parsec.Combinator.lookAhead (space <|> char '(')) >>
+                               spaces >> lexeme bExpParser)
                       <*> (stringWithSpaces "then" >> statementParser)
                       <*> 
                           option NoopStm (
@@ -449,7 +451,8 @@ Ex: Parsec.parse whileParser "" "while (True) do (a :=10; b := 20;)" =>
       Right (While (Bool True) [Assign "a" (Num 10),Assign "b" (Num 20)])
 -}
 whileParser :: Parser Stm
-whileParser = While <$> try (stringWithSpaces "while" >> lexeme bExpParser)
+whileParser = While <$> (try (string "while" >> Text.Parsec.Combinator.lookAhead (space <|> char '(')) >>
+                               spaces >> lexeme bExpParser)
                     <*> (stringWithSpaces "do" >> statementParser)
 
 {-

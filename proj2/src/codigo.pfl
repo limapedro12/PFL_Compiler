@@ -15,6 +15,8 @@ while (False) do (
     while (False)do()
 )
 
+whilel := 0;
+
 if (False) 
 then lala := 0;
 else lala := 6;;
@@ -30,3 +32,4 @@ if(False) then(
 // lala
 
 (a:=70; if(True)then() j:=0 ;)
+//l
