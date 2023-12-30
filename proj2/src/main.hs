@@ -57,9 +57,11 @@ state2Str state = foldr (\x y -> if y /= "" then printVar x ++ "," ++ y else pri
 -- Stack operations
 top :: Stack -> VarValue
 top (x:_) = x
+top [] = error "\n The Stack is empty, so you cannot use it's top value\n"
 
 pop :: Stack -> Stack
 pop (_:xs) = xs
+pop [] = error "\n The Stack is empty, so you cannot use it's top value\n"
 
 push :: VarValue -> Stack -> Stack
 push x stack = x:stack
@@ -67,7 +69,7 @@ push x stack = x:stack
 -- Instruction set
 addValues :: VarValue -> VarValue -> VarValue
 addValues (IntegerValue a) (IntegerValue b) = IntegerValue (a + b)
-addValues _ _ = error "Run-time error"
+addValues _ _ = error "\n You can only add Integres\n"
 
 add :: Stack -> Stack
 add stack = push result (pop (pop stack))
@@ -75,7 +77,7 @@ add stack = push result (pop (pop stack))
 
 multValues :: VarValue -> VarValue -> VarValue
 multValues (IntegerValue a) (IntegerValue b) = IntegerValue (a * b)
-multValues _ _ = error "Run-time error"
+multValues _ _ = error "\n You can only multiply Integres\n"
 
 mult :: Stack -> Stack
 mult stack = push result (pop (pop stack))
@@ -83,7 +85,7 @@ mult stack = push result (pop (pop stack))
 
 subValues :: VarValue -> VarValue -> VarValue
 subValues (IntegerValue a) (IntegerValue b) = IntegerValue (a - b)
-subValues _ _ = error "Run-time error"
+subValues _ _ = error "\n You can only subtract Integres\n"
 
 sub :: Stack -> Stack
 sub stack = push result (pop (pop stack))
@@ -98,7 +100,7 @@ false = push (BoolValue False)
 eqValues :: VarValue -> VarValue -> VarValue
 eqValues (IntegerValue a) (IntegerValue b) = BoolValue (a == b)
 eqValues (BoolValue a) (BoolValue b) = BoolValue (a == b)
-eqValues _ _ = error "Run-time error"
+eqValues _ _ = error "\n With Eq, you can only compare Integres or Bools\n"
 
 eq :: Stack -> Stack
 eq stack = push result (pop (pop stack))
@@ -106,7 +108,7 @@ eq stack = push result (pop (pop stack))
 
 leValues :: VarValue -> VarValue -> VarValue
 leValues (IntegerValue a) (IntegerValue b) = BoolValue (a <= b)
-leValues _ _ = error "Run-time error"
+leValues _ _ = error "\n With Le, you can only compare Integres\n"
 
 le :: Stack -> Stack
 le stack = push result (pop (pop stack))
@@ -114,7 +116,7 @@ le stack = push result (pop (pop stack))
 
 andValues :: VarValue -> VarValue -> VarValue
 andValues (BoolValue a) (BoolValue b) = BoolValue (a && b)
-andValues _ _ = error "Run-time error"
+andValues _ _ = error "\n With And, you can only compare Bools\n"
 
 and :: Stack -> Stack
 and stack = push result (pop (pop stack))
@@ -122,7 +124,7 @@ and stack = push result (pop (pop stack))
 
 negValue :: VarValue -> VarValue
 negValue (BoolValue a) = BoolValue (not a)
-negValue _ = error "Run-time error"
+negValue _ = error "\n You can only negate Bools\n"
 
 neg :: Stack -> Stack
 neg stack = push result (pop stack)
@@ -190,79 +192,156 @@ testAssembler code = (stack2Str stack, state2Str state)
 
 -- Part 2
 
--- TODO: Define the types Aexp, Bexp, Stm and Program
-
-data Exp = Aexp | Bexp
-
-data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | VarA VarName | Num Integer
+{-
+Tipo de dados que representa uma expressão aritmética
+-}
+data Aexp = AddExp Aexp Aexp | MultExp Aexp Aexp | SubExp Aexp Aexp | Var VarName | Num Integer
             deriving (Eq, Show)
-data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | AEquExp Aexp Aexp | BEquExp Bexp Bexp | NegExp Bexp | VarB VarName | Bool Bool
+
+{-
+Tipo de dados que representa uma expressão booleana
+-}
+data Bexp = AndExp Bexp Bexp | LeExp Aexp Aexp | AEquExp Aexp Aexp | BEquExp Bexp Bexp | NegExp Bexp | Bool Bool
             deriving (Eq, Show)
-data Stm = AssignAexp VarName Aexp | AssignBexp VarName Bexp | While Bexp [Stm] | IfThenElse Bexp [Stm] [Stm] | NoopStm
+
+{-
+Tipo de dados que representa um statement
+-}
+data Stm = Assign VarName Aexp | SequenceOfStatements [Stm] | While Bexp Stm | IfThenElse Bexp Stm Stm | NoopStm
            deriving (Eq, Show)
 
+{-
+Tipo de dados que representa um programa (lista de statements)
+-}
 type Program = [Stm]
 
+{-
+Função que recebe uma expressão aritmética na sua representação interna
+(do tipo Aexp) e retorna um conjunto de intruções equivalentes.
+Ex: compA (AddExp (Var "x") (MultExp (Num 5) (Num 70))) =>
+      [Push 70,Push 5,Mult,Fetch "x",Add]
+-}
 compA :: Aexp -> Code
 compA (AddExp a1 a2) = compA a2 ++ compA a1 ++ [Add]
 compA (MultExp a1 a2) = compA a2 ++ compA a1 ++ [Mult]
 compA (SubExp a1 a2) = compA a2 ++ compA a1 ++ [Sub]
-compA (VarA x) = [Fetch x]
+compA (Var x) = [Fetch x]
 compA (Num n) = [Push n]
 
+{-
+Função que recebe uma expressão boleana na sua representação interna (do
+tipo Bexp) e retorna um conjunto de intruções equivalentes.
+Ex: compB (AndExp (EquExp (Var "x") (Num 2)) (Bool True)) =>
+      [Tru,Push 2,Fetch "x",Equ,And]
+-}
 compB :: Bexp -> Code
 compB (AndExp b1 b2) = compB b2 ++ compB b1 ++ [And]
 compB (LeExp a1 a2) = compA a2 ++ compA a1 ++ [Le]
 compB (AEquExp a1 a2) = compA a2 ++ compA a1 ++ [Equ]
 compB (BEquExp b1 b2) = compB b2 ++ compB b1 ++ [Equ]
 compB (NegExp b) = compB b ++ [Neg]
-compB (VarB x) = [Fetch x]
 compB (Bool True) = [Tru]
 compB (Bool False) = [Fals]
 
+{-
+Função que recebe um statement na sua representação interna (do tipo Stm)
+e retorna um conjunto de intruções equivalentes.
+Ex: compStm (While (Bool True) [Assign "a" (Num 10),Assign "b" (Num 20)]) =>
+      [Loop [Tru] [Push 10,Store "a",Push 20,Store "b"]]
+-}
 compStm :: Stm -> Code
-compStm (AssignAexp name a) = compA a ++ [Store name]
-compStm (AssignBexp name b) = compB b ++ [Store name]
-compStm (While b stmList) = [Loop (compB b) (compile stmList)]
-compStm (IfThenElse b thenStmList elseStmList) = compB b ++ [Branch (compile thenStmList) (compile elseStmList)]
+compStm (Assign name a) = compA a ++ [Store name]
+compStm (While b stmList) = [Loop (compB b) (compStm stmList)]
+compStm (IfThenElse b thenStmList elseStmList) = compB b ++ [Branch (compStm thenStmList) (compStm elseStmList)]
+compStm (SequenceOfStatements stmList) = concatMap compStm stmList
 compStm NoopStm = [Noop]
 
+{-
+Função que recebe um programa na sua representação interna (lista de statements)
+e retorna um conjunto de intruções equivalentes.
+Ex: compile [Assign "y" (AddExp (Var "x") (Num 1)), Assign "x" (Num 2)] =>
+      [Push 1,Fetch "x",Add,Store "y",Push 2,Store "x"]
+-}
 compile :: Program -> Code
 compile = concatMap compStm
 
+{-
+Na secção seguinte, definimos um conjunto de Parsers (do tipo definido pelo 
+Parsec), que são utlizados para transformar a string com o código na 
+representação interna definida acima.
+-}
+
+{-
+Parser que faz parse de uma string com inteiro para respetivo inteiro.
+Ex: Parsec.parse intParser "" "123" => Right 123
+-}
 intParser :: Parser Integer
 intParser = do
     n <- many1 digit
     return (read n)
 
+{-
+Função que recebe um Parser e retorna outro Parser que consome os todos os
+espaços, new lines, e tabs, que estejam depois do texto pretendido.
+-}
 lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
 
+{-
+Função que recebe uma string e retorna um Parser que faz parse da respetiva
+string e consome todos os espaços, new lines, e tabs, que se seguem.
+Ex: Parsec.parse (stringWithSpaces "haskell") "" "haskell \n\t  " => Right "haskell"
+-}
 stringWithSpaces :: String -> Parser String
 stringWithSpaces s = lexeme (string s)
 
+{-
+Função que recebe um caráter e retorna um Parser que faz parse do respetivo
+caráter e consome todos os espaços, new lines, e tabs, que se seguem.
+Ex: Parsec.parse (charWithSpaces 'o') "" "o \n\t  " => Right 'o'
+-}
 charWithSpaces :: Char -> Parser Char
 charWithSpaces c = lexeme (char c)
 
+{-
+Parser que faz parse de uma string com código na nossa liguagem e devolve
+uma lista de statements, ou seja, um Program.
+-}
 codeParser :: Parser Program
 codeParser = many commentParser >> many (statementParser <* many commentParser) <* eof
 
-blockOfStatementsParser :: Parser Program
-blockOfStatementsParser = option [NoopStm] (many commentParser >> many1 (statementParser <* many commentParser))
-
+{-
+Parser que faz parse de uma string com um statement na nossa linguagem e
+devolve um Stm que representa internamente esse statement
+Ex: Parsec.parse statementParser "" "x := 42;" => Right(Assign "x" (Num 42))
+-}
 statementParser :: Parser Stm
-statementParser = ifParser <|> whileParser <|> noStatementParser <|> assignAexpParser
+statementParser = ifParser <|> whileParser <|> noStatementParser <|> sequenceOfStatementsParser <|> assignParser
 
+{-
+Parser que faz parse de um comentário.
+Ex: Parsec.parse commentParser "" "/* lala */" => Right " lala "
+-}
 commentParser :: Parser String
 commentParser = try (lexeme (string "/*" >> manyTill anyChar (string "*/"))) <|>
                      lexeme (string "//" >> manyTill anyChar (char '\n'))
 
+{-
+Lista de nomes reservados, ou seja, nenhum dos elementos desta lista pode
+ser o nome de uma variável.
+-}
 reservedNames :: [String]
-reservedNames = ["if", "then", "else", "and", "not", "or"]
+reservedNames = ["if", "then", "else", "while", "do", "and", "not", "or"]
 
+{-
+Parser que faz parse do nome de uma variável. Este tem que começar com uma
+letra minuscula, e o restante do nome só pode conter letras(maiusculas ou 
+minusculas), números e underscores.
+Ex: Parsec.parse varNameParser "" "certo_numero_1" => Right "" "certo_numero_1"
+-}
 varNameParser :: Parser String
 varNameParser = do
-  first <- letter
+  first <- lower
   rest <- many (letter <|> digit <|> char '_')
   if (first:rest) `notElem` reservedNames
     then return (first:rest)
@@ -312,30 +391,73 @@ arithmeticComparisonOperators :: Text.Parsec.Prim.ParsecT   String () Data.Funct
 arithmeticComparisonOperators = (stringWithSpaces "<=" >> return LeExp)
                             <|> (stringWithSpaces "==" >> return AEquExp)
 
-assignAexpParser :: Parser Stm
-assignAexpParser = AssignAexp <$> lexeme varNameParser
-                              <*> (stringWithSpaces ":=" >> lexeme aExpParser <* charWithSpaces ';')
+{-
+Parser que faz parse de uma string com um assignment statement na nossa
+linguagem e devolve um Stm do formato 'Assign VarName Aexp' que representa
+internamente esse statement.
+Ex: Parsec.parse assignParser "" "x := 42;" => Right (Assign "x" (Num 42))
+-}
+assignParser :: Parser Stm
+assignParser = try (Assign <$> lexeme varNameParser
+                           <*> (stringWithSpaces ":=" >> lexeme aExpParser <* charWithSpaces ';'))
 
+{-
+Parser que faz parse de uma string com uma parte do código (como o código
+dentro de um if statement ou de um while loop) e devolve uma lista de
+statements, ou seja, um Program. Caso este conjunto seja vazio, delvolve 
+uma lista com apenas um elemento, o NoopStm, que posteriormente pode ser 
+transformado numa instrução Noop.
+-}
+sequenceOfStatementsParser :: Parser Stm
+sequenceOfStatementsParser = try (SequenceOfStatements <$> (charWithSpaces '(' >> 
+                                 (many commentParser >> many1 (statementParser <* many commentParser))
+                                  <* charWithSpaces ')'))
+
+{-
+Parser que faz parse de uma string apenas com ';' ou "()"", espaços, tabs ou new
+lines e devolve um NoopStm. Este parser tem como objetivo evitar erros,
+caso o utilizador escreva algum ';' a mais, no inicio ou no fim de outros
+statements, ou caso algum if statement ou while loop não contenham instruções, 
+o parser, não devolverá nenhum erro. Se este parser não existisse código como 
+"a := 6;;" ou "while (x >= 1) do ()" devolveria um erro, e assim estes
+statements apenas são ignorados.
+Ex: Parsec.parse noStatementParser "" "; \n ; " => Right NoopStm
+-}
 noStatementParser :: Parser Stm
-noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm)
+noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm) <|> 
+                    try (stringWithSpaces "()" >> return NoopStm)
 
+{-
+Parser que faz parse de uma string com um if statement na nossa linguagem 
+e devolve um Stm do formato 'IfThenElse Bexp [Stm] [Stm]' que representa
+internamente esse statement.
+Ex: Parsec.parse ifParser "" "if (True) then x :=1; else y := 2;" => 
+      Right (IfThenElse (Bool True) [Assign "x" (Num 1)] [Assign "y" (Num 2)])
+-}
 ifParser :: Parser Stm
 ifParser = IfThenElse <$> try (stringWithSpaces "if" >> lexeme bExpParser)
-                      <*> (stringWithSpaces "then" >>
-                          ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
-                      <|>   do { s <- statementParser; return [s] }))
-                      <*>
-                          option [NoopStm] (
-                            stringWithSpaces "else" >>
-                            ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
-                      <|>   do { s <- statementParser; return [s] }))
+                      <*> (stringWithSpaces "then" >> statementParser)
+                      <*> 
+                          option NoopStm (
+                            stringWithSpaces "else" >> statementParser)
 
+{-
+Parser que faz parse de uma string com um while loop statement na nossa 
+linguagem e devolve um Stm do formato 'While Bexp [Stm]' que representa 
+internamente esse statement.
+Ex: Parsec.parse whileParser "" "while (True) do (a :=10; b := 20;)" => 
+      Right (While (Bool True) [Assign "a" (Num 10),Assign "b" (Num 20)])
+-}
 whileParser :: Parser Stm
 whileParser = While <$> try (stringWithSpaces "while" >> lexeme bExpParser)
-                    <*> (stringWithSpaces "do" >>
-                        ((charWithSpaces '(' >> blockOfStatementsParser <* charWithSpaces ')')
-                    <|>   do { s <- statementParser; return [s] }))
+                    <*> (stringWithSpaces "do" >> statementParser)
 
+{-
+Função que recebe como argumento uma string com um programa na nossa liguagem
+e faz parse do mesmo, retornando o programa na sua representação interna 
+(lista de statements). Se não conseguir devove uma exceção a indicar aonde se
+encontra o erro.
+-}
 parse :: String -> Program
 parse programString | isRight res = parsedProgram
                     | isLeft res = throwParseError errorWhileParsing
@@ -344,20 +466,37 @@ parse programString | isRight res = parsedProgram
         Right parsedProgram = res
         Left errorWhileParsing = res
 
-cleanSpaces :: String -> String
-cleanSpaces = filter (`notElem` " \n\t")
-
+{-
+Função que recebe um ParseError e lança-o, através da função 'error', de
+forma mais inteligível.
+-}
 throwParseError :: ParseError -> Program
 throwParseError errorToThrow = error ("\nParse Error in " ++ show errorToThrow ++ "\n")
 
+{-
+Função que recebe como argumento uma string com o nome de um ficheiro, cujo
+conteudo é um programa na nossa liguagem e faz parse do mesmo, retornando o 
+programa na sua representação interna (lista de statements). Se não conseguir
+devove uma exceção a indicar aonde se encontra o erro.
+-}
 parseFile :: String -> IO [Stm]
 parseFile fileName = do program  <- readFile fileName
                         return (parse program)
 
+{-
+Função que recebe como argumento uma string com o nome de um ficheiro, cujo
+conteudo é um programa na nossa liguagem, executa-o e devolve um par de 
+strings que representam a stack e o armazenamento após a execução.
+-}
 testParserFile :: String -> IO (String, String)
 testParserFile fileName = do programCode  <- readFile fileName
                              return (testParser programCode)
 
+{-
+Função que recebe como argumento uma string com um programa na nossa
+liguagem, executa-o e devolve um par de strings que representam a stack
+e o armazenamento após a execução.
+-}
 -- To help you test your parser
 testParser :: String -> (String, String)
 testParser programCode = (stack2Str stack, state2Str state)
