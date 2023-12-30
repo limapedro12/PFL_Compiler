@@ -1,3 +1,5 @@
+-- Segundo Projeto de Programação Funcional e Lógica 2023/24
+
 import Distribution.TestSuite(TestInstance(name))
 import Data.List(sortOn)
 import Text.Parsec (ParseError,try,char,digit,letter,string,eof,many1,option,(<|>),many)
@@ -12,130 +14,305 @@ import GHC.Generics (Associativity(LeftAssociative))
 import qualified Data.Functor.Identity
 import qualified Text.Parsec.Prim
 import Data.Binary.Get (lookAhead)
--- PFL 2023/24 - Haskell practical assignment quickstart
--- Updated on 27/12/2023
 
 -- Part 1
 
--- Do not modify our definition of Inst and Code
+{-
+Tipo de dados que representa uma intrução assembly
+-}
 data Inst =
   Push Integer | Add | Mult | Sub | Tru | Fals | Equ | Le | And | Neg | Fetch String | Store String | Noop |
   Branch Code Code | Loop Code Code
   deriving Show
+
+{-
+Tipo de dados que representa um programa assembly (lista de instruções)
+-}
 type Code = [Inst]
 
+{-
+Tipo de dados que representa o nome de uma variável
+-}
 type VarName = String
+
+{-
+Tipo de dados que representa o valor de uma variável, que pode ser um
+inteiro ou um booleano
+-}
 data VarValue = IntegerValue Integer
               | BoolValue Bool
               deriving Show
 
+{-
+Tipo de dados que representa a stack
+-}
+type Stack = [VarValue]
+
+{-
+Tipo de dados que representa uma variável (nome e valor)
+-}
+type Var = (VarName, VarValue)
+
+{-
+Tipo de dados que representa o armazenamento (lista com todas as variáveis
+armazenadas)
+-}
+type State = [Var]
+
+{-
+Função que recebe um VarValue e devolve uma string com o seu valor
+Ex: printVarVal (IntegerValue 42) => "42"
+    printVarVal (BoolValue True) => "True"
+-}
 printVarVal :: VarValue -> String
 printVarVal (IntegerValue x) = Prelude.show x
 printVarVal (BoolValue x) = Prelude.show x
 
+{-
+Função que recebe um Var e devolve uma string com a sua representação
+Ex: printVar ("x", IntegerValue 42) => "x=42"
+-}
 printVar :: Var -> String
 printVar (name, value) = name ++ "=" ++ printVarVal value
 
-type Stack = [VarValue]
-
-type Var = (VarName, VarValue)
-
-type State = [Var]
-
+{-
+Função que retorna uma stack vazia (lista vazia)
+-}
 createEmptyStack :: Stack
 createEmptyStack = []
 
+{-
+Função que recebe uma stack e devolve uma string com a sua representação
+Ex: stack2Str [IntegerValue 42, BoolValue True, IntegerValue 10] => 
+      "42,True,10"
+-}
 stack2Str :: Stack -> String
 stack2Str = foldr (\x y -> if y /= "" then printVarVal x ++ "," ++ y else printVarVal x) ""
 
+{-
+Função que retorna um armazenamento vazio (lista vazia)
+-}
 createEmptyState :: State
 createEmptyState = []
 
+{-
+Função que recebe um armazenamento e devolve uma string com a sua representação
+Ex: state2Str [("x", IntegerValue 42), ("y", BoolValue True), ("z", IntegerValue 10)] => 
+      "x=42,y=True,z=10"
+-}
 state2Str :: State -> String
 state2Str state = foldr (\x y -> if y /= "" then printVar x ++ "," ++ y else printVar x) "" sorted
                   where sorted = sortOn fst state
 
--- Stack operations
+-- Operações sobre a stack
+{-
+Função que recebe uma stack e devolve o elemento que está no topo da stack.
+Ex: top [IntegerValue 42, BoolValue True, IntegerValue 10] => IntegerValue 42
+-}
 top :: Stack -> VarValue
 top (x:_) = x
 top [] = error "Run-time error"
 
+{-
+Função que recebe uma stack e devolve a stack sem o elemento que está no topo.
+Ex: pop [IntegerValue 42, BoolValue True, IntegerValue 10] => 
+      [BoolValue True, IntegerValue 10]
+-}
 pop :: Stack -> Stack
 pop (_:xs) = xs
 pop [] = error "Run-time error"
 
+{-
+Função que recebe uma stack e um VarValue e devolve a stack com o VarValue
+adicionado no topo.
+Ex: push (IntegerValue 42) [BoolValue True, IntegerValue 10] => 
+      [IntegerValue 42, BoolValue True, IntegerValue 10]
+-}
 push :: VarValue -> Stack -> Stack
 push x stack = x:stack
 
--- Instruction set
+-- Conjunto de instruções assembly
+{-
+Função que recebe dois VarValues do tipo IntegerValue e devolve um VarValue
+com o resultado da sua soma.
+Ex: addValues (IntegerValue 42) (IntegerValue 10) => IntegerValue 52
+-}
 addValues :: VarValue -> VarValue -> VarValue
 addValues (IntegerValue a) (IntegerValue b) = IntegerValue (a + b)
 addValues _ _ = error "Run-time error"
 
+{-
+Função que recebe uma stack e devolve a stack com o resultado da soma dos
+dois elementos que estão no topo, sendo que estes têm que ser do tipo
+IntegerValue.
+Ex: add [IntegerValue 42, IntegerValue 10, BoolValue True] => 
+      [IntegerValue 52, BoolValue True]
+-}
 add :: Stack -> Stack
 add stack = push result (pop (pop stack))
             where result = top stack `addValues` top (pop stack)
 
+{-
+Função que recebe dois VarValues do tipo IntegerValue e devolve um VarValue
+com o resultado da sua multiplicação.
+Ex: multValues (IntegerValue 42) (IntegerValue 10) => IntegerValue 420
+-}
 multValues :: VarValue -> VarValue -> VarValue
 multValues (IntegerValue a) (IntegerValue b) = IntegerValue (a * b)
 multValues _ _ = error "Run-time error"
 
+{-
+Função que recebe uma stack e devolve a stack com o resultado da multiplicação
+dos dois elementos que estão no topo, sendo que estes têm que ser do tipo
+IntegerValue.
+Ex: mult [IntegerValue 42, IntegerValue 10, BoolValue True] => 
+      [IntegerValue 420, BoolValue True]
+-}
 mult :: Stack -> Stack
 mult stack = push result (pop (pop stack))
              where result = top stack `multValues` top (pop stack)
 
+{-
+Função que recebe dois VarValues do tipo IntegerValue e devolve um VarValue
+com o resultado da sua subtração.
+Ex: subValues (IntegerValue 42) (IntegerValue 10) => IntegerValue 32
+-}
 subValues :: VarValue -> VarValue -> VarValue
 subValues (IntegerValue a) (IntegerValue b) = IntegerValue (a - b)
 subValues _ _ = error "Run-time error"
 
+{-
+Função que recebe uma stack e devolve a stack com o resultado da subtração
+dos dois elementos que estão no topo, sendo que estes têm que ser do tipo
+IntegerValue.
+Ex: sub [IntegerValue 42, IntegerValue 10, BoolValue True] => 
+      [IntegerValue 32, BoolValue True]
+-}
 sub :: Stack -> Stack
 sub stack = push result (pop (pop stack))
             where result = top stack `subValues` top (pop stack)
 
+{-
+Função que recebe uma stack e devolve a mesma stack com o BoolValue True
+adicionado no topo.
+Ex: true [IntegerValue 42, IntegerValue 10, BoolValue True] => 
+      [BoolValue True, IntegerValue 42, IntegerValue 10, BoolValue True]
+-}
 true :: Stack -> Stack
 true = push (BoolValue True)
 
+{-
+Função que recebe uma stack e devolve a mesma stack com o BoolValue False
+adicionado no topo.
+Ex: false [IntegerValue 42, IntegerValue 10, BoolValue True] => 
+      [BoolValue False, IntegerValue 42, IntegerValue 10, BoolValue True]
+-}
 false :: Stack -> Stack
 false = push (BoolValue False)
 
+{-
+Função que recebe dois VarValues e devolve um BoolValue que indica se estes
+são iguais ou não.
+Ex: eqValues (IntegerValue 42) (IntegerValue 42) => BoolValue True
+    eqValues (BoolValue True) (BoolValue False) => BoolValue False
+-}
 eqValues :: VarValue -> VarValue -> VarValue
 eqValues (IntegerValue a) (IntegerValue b) = BoolValue (a == b)
 eqValues (BoolValue a) (BoolValue b) = BoolValue (a == b)
 eqValues _ _ = error "Run-time error"
 
+{-
+Função que recebe uma stack e devolve a stack BoolValue True no topo caso
+os dois elementos que estão no topo sejam iguais, e BoolValue False caso
+contrário, sendo que estes têm que ser do mesmo tipo
+tipo.
+Ex: eq [IntegerValue 42, IntegerValue 10, BoolValue True] => 
+      [BoolValue False, BoolValue True]
+-}
 eq :: Stack -> Stack
 eq stack = push result (pop (pop stack))
            where result = top stack `eqValues` top (pop stack)
 
+{-
+Função que recebe dois VarValues do tipo IntegerValue e devolve um BoolValue
+que indica se o primeiro é menor ou igual ao segundo.
+Ex: leValues (IntegerValue 42) (IntegerValue 10) => BoolValue False
+-}
 leValues :: VarValue -> VarValue -> VarValue
 leValues (IntegerValue a) (IntegerValue b) = BoolValue (a <= b)
 leValues _ _ = error "Run-time error"
 
+{-
+Função que recebe uma stack e devolve a stack BoolValue True no topo caso
+o elemento que está no topo seja menor ou igual ao elemento que está por
+baixo, e BoolValue False caso contrário, sendo que estes têm que ser do
+tipo IntegerValue.
+Ex: le [IntegerValue 42, IntegerValue 10, BoolValue True] => 
+      [BoolValue False, BoolValue True]
+-}
 le :: Stack -> Stack
 le stack = push result (pop (pop stack))
            where result = top stack `leValues` top (pop stack)
 
+{-
+Função que recebe dois VarValues do tipo BoolValue e devolve um VarValue
+com o resultado do "e" lógico entre os dois.
+Ex: andValues (BoolValue True) (BoolValue False) => BoolValue False
+-}
 andValues :: VarValue -> VarValue -> VarValue
 andValues (BoolValue a) (BoolValue b) = BoolValue (a && b)
 andValues _ _ = error "Run-time error"
 
+{-
+Função que recebe uma stack e devolve a stack com o resultado do "e" lógico
+entre os dois elementos que estão no topo, sendo que estes têm que ser do
+tipo BoolValue.
+Ex: and [BoolValue True, BoolValue False, IntegerValue 42] => 
+      [BoolValue False, IntegerValue 42]
+-}
 and :: Stack -> Stack
 and stack = push result (pop (pop stack))
             where result = top stack `andValues` top (pop stack)
 
+{-
+Função que recebe um VarValue do tipo BoolValue e devolve um VarValue com
+a negação do mesmo.
+Ex: negValue (BoolValue True) => BoolValue False
+-}
 negValue :: VarValue -> VarValue
 negValue (BoolValue a) = BoolValue (not a)
 negValue _ = error "Run-time error"
 
+{-
+Função que recebe uma stack e devolve a stack com o resultado da negação
+do elemento que está no topo, sendo que este tem que ser do tipo BoolValue.
+Ex: neg [BoolValue True, BoolValue False, IntegerValue 42] => 
+      [BoolValue False, BoolValue False, IntegerValue 42]
+-}
 neg :: Stack -> Stack
 neg stack = push result (pop stack)
             where result = negValue (top stack)
 
+{-
+Função que recebe um VarName, uma stack e um armazenamento e devolve a
+stack com o VarValue que está associado ao VarName no armazenamento
+adicionado no topo.
+Ex: fetch "x" [BoolValue True] [("x", IntegerValue 10)] => 
+      [IntegerValue 10, BoolValue True]
+-}
 fetch :: VarName -> Stack -> State -> Stack
 fetch _ _ [] = error "Run-time error"
 fetch varName oldStack ((headName, headVal):stateTail) | headName /= varName = fetch varName oldStack stateTail
                                                        | otherwise = push headVal oldStack
 
+{-
+Função que recebe um VarName, uma stack e um armazenamento e devolve um par
+com o armazenamento com o VarValue que está no topo da stack associado ao
+VarName (se este já existir apenas é atualizado, caso contrário é adicionado
+ao armazenamento) e a stack sem o elemento que está no topo.
+Ex: store "z" [IntegerValue 42, BoolValue True] [("x", IntegerValue 10)] => 
+      ([BoolValue True],[("x",IntegerValue 10),("z",IntegerValue 42)])
+-}
 store :: VarName -> Stack -> State -> (Stack, State)
 store varName oldStack [] = (pop oldStack, newState)
                         where newState = [(varName, top oldStack)]
@@ -144,12 +321,29 @@ store varName oldStack ((headName, headVal):oldStateTail) | varName == headName 
                                                           where newState1 = (varName, top oldStack):oldStateTail
                                                                 (newStack, newState) = store varName oldStack oldStateTail
 
+{-
+Função que recebe dois conjuntos de instruções assembly, uma stack e um
+armazenamento, e devolve um tuple com um conjunto de instruções assembly
+(o primeiro conjunto caso o elemento que está no topo da stack seja BoolValue
+True, caso contrário o segundo conjunto), a stack sem o elemento que está no
+topo e o armazenamento.
+Ex: branch [Push 10, Push 20] [Push 30, Push 40] [BoolValue True, IntegerValue 42] 
+           [("x", IntegerValue 10)] => 
+        ([Push 10,Push 20],[IntegerValue 42],[("x",IntegerValue 10)])
+-}
 branch :: Code -> Code -> Stack -> State -> (Code, Stack, State)
 branch c1 c2 stack state = case top stack of
   BoolValue True -> (c1, pop stack, state)
   BoolValue False -> (c2, pop stack, state)
   _ -> error "Run-time error"
 
+{-
+Função que recebe um conjunto de instruções assembly, uma stack e um
+armazenamento, corre o conjunto de instruções assembly e devolve um tuple
+com um conjunto vazio de instruções, a stack e o armazenamento após a execução.
+Ex: run ([Push 42, Push 10, Push 20, Add, Store "x"], [], [("x", IntegerValue 10), ("y", BoolValue True)]) => 
+      ([],[IntegerValue 42],[("x",IntegerValue 30),("y",BoolValue True)])
+-}
 run :: (Code, Stack, State) -> (Code, Stack, State)
 run ([], stack, state) = ([], stack, state)
 run (inst:r, stack, state) = case inst of
@@ -169,7 +363,10 @@ run (inst:r, stack, state) = case inst of
   Branch c1 c2 -> let (branchCode, newStack, newState) = branch c1 c2 stack state in run (branchCode ++ r, newStack, newState)
   Loop c1 c2 -> run (c1 ++ [Branch (c2 ++ [Loop c1 c2]) [Noop]] ++ r, stack, state)
 
--- To help you test your assembler
+{-
+Função que recebe um conjunto de instruções assembly e devolve um par de
+strings que representam a stack e o armazenamento após a execução.
+-}
 testAssembler :: Code -> (String, String)
 testAssembler code = (stack2Str stack, state2Str state)
   where (_,stack,state) = run (code, createEmptyStack, createEmptyState)
@@ -190,6 +387,9 @@ testAssembler code = (stack2Str stack, state2Str state)
 -- If you test:
 -- testAssembler [Tru,Tru,Store "y", Fetch "x",Tru]
 -- You should get an exception with the string: "Run-time error"
+
+
+
 
 -- Part 2
 
@@ -324,8 +524,9 @@ Parser que faz parse de um comentário.
 Ex: Parsec.parse commentParser "" "/* lala */" => Right " lala "
 -}
 commentParser :: Parser String
-commentParser = try (lexeme (string "/*" >> manyTill anyChar (string "*/"))) <|>
-                     lexeme (string "//" >> manyTill anyChar (char '\n'))
+commentParser = try (lexeme (string "/*" >> manyTill anyChar (try (string "*/")))) <|>
+                try (lexeme (string "//" >> manyTill anyChar (char '\n'))) <|>
+                     lexeme (string "//" >> manyTill anyChar eof)
 
 {-
 Lista de nomes reservados, ou seja, nenhum dos elementos desta lista pode
@@ -426,7 +627,7 @@ Ex: Parsec.parse noStatementParser "" "; \n ; " => Right NoopStm
 -}
 noStatementParser :: Parser Stm
 noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm) <|> 
-                    try (stringWithSpaces "()" >> return NoopStm)
+                    try (charWithSpaces '(' >> many commentParser >> charWithSpaces ')' >> return NoopStm)
 
 {-
 Parser que faz parse de uma string com um if statement na nossa linguagem 
@@ -500,7 +701,6 @@ Função que recebe como argumento uma string com um programa na nossa
 liguagem, executa-o e devolve um par de strings que representam a stack
 e o armazenamento após a execução.
 -}
--- To help you test your parser
 testParser :: String -> (String, String)
 testParser programCode = (stack2Str stack, state2Str state)
   where (_,stack,state) = run (compile (parse programCode), createEmptyStack, createEmptyState)
