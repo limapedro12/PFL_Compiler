@@ -9,6 +9,8 @@ import Text.Parsec.Char
 import Control.Monad
 import Data.Either
 import GHC.Generics (Associativity(LeftAssociative))
+import qualified Data.Functor.Identity
+import qualified Text.Parsec.Prim
 -- PFL 2023/24 - Haskell practical assignment quickstart
 -- Updated on 27/12/2023
 
@@ -266,61 +268,49 @@ varNameParser = do
     then return (first:rest)
     else error ("\nYou cannot name a variable " ++ (first:rest) ++ " because it is a reserved name.\n")
 
--- aExpParser :: Parser Aexp
--- aExpParser = do {
---     exp <- try (Num <$> intParser) <|>
---                (VarA <$> many1 letter);
---     many (letter   <|> digit    <|> char '+' <|>
---           char '-' <|> char '*' <|> char '/');
---     return exp;
--- }
-
 aExpParser :: Parser Aexp
 aExpParser = buildExpressionParser aOperators aTerm
 
-aOperators = [[Infix (MultExp <$ lexeme (char '*')) AssocLeft],
-              [Infix (AddExp <$ lexeme (char '+')) AssocLeft, Infix (SubExp <$ lexeme (char '-')) AssocLeft]]
+aOperators :: [[Operator String () Data.Functor.Identity.Identity Aexp]]
+aOperators = [[Infix (MultExp <$ charWithSpaces '*') AssocLeft],
+              [Infix (AddExp <$ charWithSpaces '+') AssocLeft, Infix (SubExp <$ charWithSpaces '-') AssocLeft]]
 
 aTerm :: Parser Aexp
 aTerm = lexeme term
   where
-    term = parens (lexeme aExpParser)
-      <|> Num <$> lexeme integer
-      <|> VarA <$> lexeme varName
+    term = try (parens (lexeme aExpParser))
+      <|> try (Num <$> lexeme intParser)
+      <|> try (VarA <$> lexeme varNameParser)
     parens = between (stringWithSpaces "(") (stringWithSpaces ")")
-    integer = read <$> many1 digit
-    varName = many1 letter
 
 bExpParser :: Parser Bexp
 bExpParser = buildExpressionParser bOperators bTerm
 
+bOperators :: [[Operator String () Data.Functor.Identity.Identity Bexp]]
 bOperators = [[Prefix (NegExp <$ stringWithSpaces "not")],
+              [Infix (BEquExp <$ charWithSpaces '=') AssocNone],
               [Infix (AndExp <$ stringWithSpaces "and") AssocLeft]]
 
 bTerm :: Parser Bexp
 bTerm = lexeme term
   where
-    term = parens (lexeme bExpParser)
-      <|> Bool False <$ lexeme (stringWithSpaces "False")
-      <|> Bool True <$ lexeme (stringWithSpaces "True")
-      <|> arithmeticComparisonExpression
-      <|> logicalComparisonExpression
+    term = try (parens (lexeme bExpParser))
+      <|> try (lexeme arithmeticComparisonParser)
+      <|> try (NegExp <$> (stringWithSpaces "not" >> bExpParser))
+      <|> try (Bool False <$ lexeme (stringWithSpaces "False"))
+      <|> try (Bool True <$ lexeme (stringWithSpaces "True"))
     parens = between (stringWithSpaces "(") (stringWithSpaces ")")
 
-arithmeticComparisonExpression =
+arithmeticComparisonParser :: Text.Parsec.Prim.ParsecT   String () Data.Functor.Identity.Identity Bexp
+arithmeticComparisonParser =
   do a1 <- aExpParser
      op <- arithmeticComparisonOperators
      a2 <- aExpParser
      return (op a1 a2)
 
+arithmeticComparisonOperators :: Text.Parsec.Prim.ParsecT   String () Data.Functor.Identity.Identity (Aexp -> Aexp -> Bexp)
 arithmeticComparisonOperators = (stringWithSpaces "<=" >> return LeExp)
                             <|> (stringWithSpaces "==" >> return AEquExp)
-
-logicalComparisonExpression =
-  do b1 <- bExpParser
-     op <- (stringWithSpaces "=" >> return BEquExp)
-     b2 <- bExpParser
-     return (op b1 b2)
 
 assignAexpParser :: Parser Stm
 assignAexpParser = AssignAexp <$> lexeme varNameParser
