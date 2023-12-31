@@ -18,7 +18,7 @@ import Data.Binary.Get (lookAhead)
 -- Part 1
 
 {-
-Tipo de dados que representa uma intrução assembly
+Tipo de dados que representa uma intrução assembly.
 -}
 data Inst =
   Push Integer | Add | Mult | Sub | Tru | Fals | Equ | Le | And | Neg | Fetch String | Store String | Noop |
@@ -26,41 +26,40 @@ data Inst =
   deriving Show
 
 {-
-Tipo de dados que representa um programa assembly (lista de instruções)
+Tipo de dados que representa um programa assembly (lista de instruções).
 -}
 type Code = [Inst]
 
 {-
-Tipo de dados que representa o nome de uma variável
+Tipo de dados que representa o nome de uma variável.
 -}
 type VarName = String
 
 {-
-Tipo de dados que representa o valor de uma variável, que pode ser um
-inteiro ou um booleano
+Tipo de dados que pode ser um inteiro ou um booleano.
 -}
 data VarValue = IntegerValue Integer
               | BoolValue Bool
               deriving Show
 
 {-
-Tipo de dados que representa a stack
+Tipo de dados que representa a stack.
 -}
 type Stack = [VarValue]
 
 {-
-Tipo de dados que representa uma variável (nome e valor)
+Tipo de dados que representa uma variável (nome e valor).
 -}
 type Var = (VarName, VarValue)
 
 {-
 Tipo de dados que representa o armazenamento (lista com todas as variáveis
-armazenadas)
+armazenadas).
 -}
 type State = [Var]
 
 {-
-Função que recebe um VarValue e devolve uma string com o seu valor
+Função que recebe um VarValue e devolve uma string com o seu valor.
 Ex: printVarVal (IntegerValue 42) => "42"
     printVarVal (BoolValue True) => "True"
 -}
@@ -69,20 +68,20 @@ printVarVal (IntegerValue x) = Prelude.show x
 printVarVal (BoolValue x) = Prelude.show x
 
 {-
-Função que recebe um Var e devolve uma string com a sua representação
+Função que recebe um Var e devolve uma string com a sua representação.
 Ex: printVar ("x", IntegerValue 42) => "x=42"
 -}
 printVar :: Var -> String
 printVar (name, value) = name ++ "=" ++ printVarVal value
 
 {-
-Função que retorna uma stack vazia (lista vazia)
+Função que retorna uma stack vazia (lista vazia).
 -}
 createEmptyStack :: Stack
 createEmptyStack = []
 
 {-
-Função que recebe uma stack e devolve uma string com a sua representação
+Função que recebe uma stack e devolve uma string que representa o seu conteudo.
 Ex: stack2Str [IntegerValue 42, BoolValue True, IntegerValue 10] => 
       "42,True,10"
 -}
@@ -90,13 +89,14 @@ stack2Str :: Stack -> String
 stack2Str = foldr (\x y -> if y /= "" then printVarVal x ++ "," ++ y else printVarVal x) ""
 
 {-
-Função que retorna um armazenamento vazio (lista vazia)
+Função que retorna um armazenamento vazio (lista vazia).
 -}
 createEmptyState :: State
 createEmptyState = []
 
 {-
-Função que recebe um armazenamento e devolve uma string com a sua representação
+Função que recebe um armazenamento e devolve uma string que representa o
+seu conteudo.
 Ex: state2Str [("x", IntegerValue 42), ("y", BoolValue True), ("z", IntegerValue 10)] => 
       "x=42,y=True,z=10"
 -}
@@ -124,7 +124,7 @@ pop [] = error "Run-time error"
 
 {-
 Função que recebe uma stack e um VarValue e devolve a stack com o VarValue
-adicionado no topo.
+adicionado ao topo.
 Ex: push (IntegerValue 42) [BoolValue True, IntegerValue 10] => 
       [IntegerValue 42, BoolValue True, IntegerValue 10]
 -}
@@ -142,9 +142,9 @@ addValues (IntegerValue a) (IntegerValue b) = IntegerValue (a + b)
 addValues _ _ = error "Run-time error"
 
 {-
-Função que recebe uma stack e devolve a stack com o resultado da soma dos
-dois elementos que estão no topo, sendo que estes têm que ser do tipo
-IntegerValue.
+Função que recebe uma stack, retira os dois elementos que estão no topo
+e devolve a stack com o resultado da soma dos mesmos no topo, sendo que
+estes têm que ser do tipo IntegerValue.
 Ex: add [IntegerValue 42, IntegerValue 10, BoolValue True] => 
       [IntegerValue 52, BoolValue True]
 -}
@@ -162,9 +162,9 @@ multValues (IntegerValue a) (IntegerValue b) = IntegerValue (a * b)
 multValues _ _ = error "Run-time error"
 
 {-
-Função que recebe uma stack e devolve a stack com o resultado da multiplicação
-dos dois elementos que estão no topo, sendo que estes têm que ser do tipo
-IntegerValue.
+Função que recebe uma stack, retira os dois elementos que estão no topo e
+devolve a stack com o resultado da multiplicação dos mesmos no topo, sendo
+que estes têm que ser do tipo IntegerValue.
 Ex: mult [IntegerValue 42, IntegerValue 10, BoolValue True] => 
       [IntegerValue 420, BoolValue True]
 -}
@@ -182,9 +182,9 @@ subValues (IntegerValue a) (IntegerValue b) = IntegerValue (a - b)
 subValues _ _ = error "Run-time error"
 
 {-
-Função que recebe uma stack e devolve a stack com o resultado da subtração
-dos dois elementos que estão no topo, sendo que estes têm que ser do tipo
-IntegerValue.
+Função que recebe uma stack, retira os dois elementos que estão no topo e
+devolve a stack com o resultado da subtração dos mesmos no topo, sendo que
+estes têm que ser do tipo IntegerValue.
 Ex: sub [IntegerValue 42, IntegerValue 10, BoolValue True] => 
       [IntegerValue 32, BoolValue True]
 -}
@@ -194,7 +194,7 @@ sub stack = push result (pop (pop stack))
 
 {-
 Função que recebe uma stack e devolve a mesma stack com o BoolValue True
-adicionado no topo.
+adicionado ao topo.
 Ex: true [IntegerValue 42, IntegerValue 10, BoolValue True] => 
       [BoolValue True, IntegerValue 42, IntegerValue 10, BoolValue True]
 -}
@@ -203,7 +203,7 @@ true = push (BoolValue True)
 
 {-
 Função que recebe uma stack e devolve a mesma stack com o BoolValue False
-adicionado no topo.
+adicionado ao topo.
 Ex: false [IntegerValue 42, IntegerValue 10, BoolValue True] => 
       [BoolValue False, IntegerValue 42, IntegerValue 10, BoolValue True]
 -}
@@ -222,10 +222,10 @@ eqValues (BoolValue a) (BoolValue b) = BoolValue (a == b)
 eqValues _ _ = error "Run-time error"
 
 {-
-Função que recebe uma stack e devolve a stack BoolValue True no topo caso
-os dois elementos que estão no topo sejam iguais, e BoolValue False caso
-contrário, sendo que estes têm que ser do mesmo tipo
-tipo.
+Função que recebe uma stack, retira os dois elementos que estão no topo,
+e devolve a stack com BoolValue True no topo caso os dois elementos sejam
+iguais, e com BoolValue False caso contrário, sendo que estes têm que ser 
+do mesmo tipo.
 Ex: eq [IntegerValue 42, IntegerValue 10, BoolValue True] => 
       [BoolValue False, BoolValue True]
 -}
@@ -243,10 +243,10 @@ leValues (IntegerValue a) (IntegerValue b) = BoolValue (a <= b)
 leValues _ _ = error "Run-time error"
 
 {-
-Função que recebe uma stack e devolve a stack BoolValue True no topo caso
-o elemento que está no topo seja menor ou igual ao elemento que está por
-baixo, e BoolValue False caso contrário, sendo que estes têm que ser do
-tipo IntegerValue.
+Função que recebe uma stack, retira os dois elementos que estão no topo
+e devolve a stack com BoolValue True no topo caso o elemento que estava
+no topo seja menor ou igual ao elemento que estava por baixo, e BoolValue
+False caso contrário, sendo que estes têm que ser do tipo IntegerValue.
 Ex: le [IntegerValue 42, IntegerValue 10, BoolValue True] => 
       [BoolValue False, BoolValue True]
 -}
@@ -264,9 +264,9 @@ andValues (BoolValue a) (BoolValue b) = BoolValue (a && b)
 andValues _ _ = error "Run-time error"
 
 {-
-Função que recebe uma stack e devolve a stack com o resultado do "e" lógico
-entre os dois elementos que estão no topo, sendo que estes têm que ser do
-tipo BoolValue.
+Função que recebe uma stack, retira os dois elementos que estão no topo e
+devolve a stack com o resultado do "e" lógico entre os dois elementos no
+topo, sendo que estes têm que ser do tipo BoolValue.
 Ex: and [BoolValue True, BoolValue False, IntegerValue 42] => 
       [BoolValue False, IntegerValue 42]
 -}
@@ -284,8 +284,9 @@ negValue (BoolValue a) = BoolValue (not a)
 negValue _ = error "Run-time error"
 
 {-
-Função que recebe uma stack e devolve a stack com o resultado da negação
-do elemento que está no topo, sendo que este tem que ser do tipo BoolValue.
+Função que recebe uma stack, retira o elemento que está no topo e devolve
+a stack com o resultado da negação do mesmo no topo, sendo que este tem que
+ser do tipo BoolValue.
 Ex: neg [BoolValue True, BoolValue False, IntegerValue 42] => 
       [BoolValue False, BoolValue False, IntegerValue 42]
 -}
@@ -296,7 +297,7 @@ neg stack = push result (pop stack)
 {-
 Função que recebe um VarName, uma stack e um armazenamento e devolve a
 stack com o VarValue que está associado ao VarName no armazenamento
-adicionado no topo.
+adicionado ao topo.
 Ex: fetch "x" [BoolValue True] [("x", IntegerValue 10)] => 
       [IntegerValue 10, BoolValue True]
 -}
@@ -306,10 +307,11 @@ fetch varName oldStack ((headName, headVal):stateTail) | headName /= varName = f
                                                        | otherwise = push headVal oldStack
 
 {-
-Função que recebe um VarName, uma stack e um armazenamento e devolve um par
-com o armazenamento com o VarValue que está no topo da stack associado ao
-VarName (se este já existir apenas é atualizado, caso contrário é adicionado
-ao armazenamento) e a stack sem o elemento que está no topo.
+Função que recebe um VarName, uma stack e um armazenamento, guarda no
+armazenamento o VarValue que está no topo da stack associado ao VarName
+passado por argumento (se este já existir apenas é atualizado, caso
+contrário é adicionado ao armazenamento) e devolve um par com o novo
+armazenamento e a stack sem o elemento que está no topo.
 Ex: store "z" [IntegerValue 42, BoolValue True] [("x", IntegerValue 10)] => 
       ([BoolValue True],[("x",IntegerValue 10),("z",IntegerValue 42)])
 -}
@@ -418,7 +420,8 @@ type Program = [Stm]
 
 {-
 Função que recebe uma expressão aritmética na sua representação interna
-(do tipo Aexp) e retorna um conjunto de intruções equivalentes.
+(do tipo Aexp) e retorna um conjunto de intruções através das quais podemos
+calcular o seu valor.
 Ex: compA (AddExp (Var "x") (MultExp (Num 5) (Num 70))) =>
       [Push 70,Push 5,Mult,Fetch "x",Add]
 -}
@@ -431,7 +434,8 @@ compA (Num n) = [Push n]
 
 {-
 Função que recebe uma expressão boleana na sua representação interna (do
-tipo Bexp) e retorna um conjunto de intruções equivalentes.
+tipo Bexp) e retorna um conjunto de intruções através das quais podemos
+calcular o seu valor.
 Ex: compB (AndExp (EquExp (Var "x") (Num 2)) (Bool True)) =>
       [Tru,Push 2,Fetch "x",Equ,And]
 -}
@@ -467,13 +471,13 @@ compile :: Program -> Code
 compile = concatMap compStm
 
 {-
-Na secção seguinte, definimos um conjunto de Parsers (do tipo definido pelo 
-Parsec), que são utlizados para transformar a string com o código na 
-representação interna definida acima.
+Na secção seguinte, definimos um conjunto de Parsers (do tipo definido
+pelo Parsec), que são utlizados para transformar a string com o código
+na representação interna definida acima.
 -}
 
 {-
-Parser que faz parse de uma string com inteiro para respetivo inteiro.
+Parser que faz parse de uma string com inteiro para o respetivo inteiro.
 Ex: Parsec.parse intParser "" "123" => Right 123
 -}
 intParser :: Parser Integer
@@ -538,7 +542,8 @@ reservedNames = ["if", "then", "else", "while", "do", "and", "not", "or"]
 {-
 Parser que faz parse do nome de uma variável. Este tem que começar com uma
 letra minuscula, e o restante do nome só pode conter letras(maiusculas ou 
-minusculas), números e underscores.
+minusculas), números e underscores, além disso não pode ser nenhum dos nomes
+reservados.
 Ex: Parsec.parse varNameParser "" "certo_numero_1" => Right "" "certo_numero_1"
 -}
 varNameParser :: Parser String
@@ -604,11 +609,11 @@ assignParser = try (Assign <$> lexeme varNameParser
                            <*> (stringWithSpaces ":=" >> lexeme aExpParser <* charWithSpaces ';'))
 
 {-
-Parser que faz parse de uma string com uma parte do código (como o código
-dentro de um if statement ou de um while loop) e devolve uma lista de
-statements, ou seja, um Program. Caso este conjunto seja vazio, delvolve 
-uma lista com apenas um elemento, o NoopStm, que posteriormente pode ser 
-transformado numa instrução Noop.
+Parser que faz parse de uma string com uma sequência de statements no formato
+"(statement1; statement2; ...)". Geralmente, estas sequências de statements
+são utilizadas em if statements e while loops, mas também podem ser utilizadas
+noutras situações. Este parser devolve um Stm do formato 'SequenceOfStatements
+[Stm]' que representa internamente essa sequência de statements.
 -}
 sequenceOfStatementsParser :: Parser Stm
 sequenceOfStatementsParser = try (SequenceOfStatements <$> (charWithSpaces '(' >> 
@@ -616,14 +621,14 @@ sequenceOfStatementsParser = try (SequenceOfStatements <$> (charWithSpaces '(' >
                                   <* charWithSpaces ')'))
 
 {-
-Parser que faz parse de uma string apenas com ';' ou "()"", espaços, tabs ou new
+Parser que faz parse de uma string apenas com ';' ou "()", espaços, tabs ou new
 lines e devolve um NoopStm. Este parser tem como objetivo evitar erros,
 caso o utilizador escreva algum ';' a mais, no inicio ou no fim de outros
 statements, ou caso algum if statement ou while loop não contenham instruções, 
-o parser, não devolverá nenhum erro. Se este parser não existisse código como 
+o parser, não devolverá nenhum erro. Se este parser não existisse, código como 
 "a := 6;;" ou "while (x >= 1) do ()" devolveria um erro, e assim estes
 statements apenas são ignorados.
-Ex: Parsec.parse noStatementParser "" "; \n ; " => Right NoopStm
+Ex: Parsec.parse noStatementParser "" "; \n ( \t); " => Right NoopStm
 -}
 noStatementParser :: Parser Stm
 noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm) <|> 
@@ -632,7 +637,7 @@ noStatementParser = try (many1 (charWithSpaces ';') >> return NoopStm) <|>
 {-
 Parser que faz parse de uma string com um if statement na nossa linguagem 
 e devolve um Stm do formato 'IfThenElse Bexp [Stm] [Stm]' que representa
-internamente esse statement.
+internamente esse if statement.
 Ex: Parsec.parse ifParser "" "if (True) then x :=1; else y := 2;" => 
       Right (IfThenElse (Bool True) [Assign "x" (Num 1)] [Assign "y" (Num 2)])
 -}
@@ -645,9 +650,9 @@ ifParser = IfThenElse <$> (try (string "if" >> Text.Parsec.Combinator.lookAhead 
                             stringWithSpaces "else" >> statementParser)
 
 {-
-Parser que faz parse de uma string com um while loop statement na nossa 
-linguagem e devolve um Stm do formato 'While Bexp [Stm]' que representa 
-internamente esse statement.
+Parser que faz parse de uma string com um while loop na nossa linguagem
+e devolve um Stm do formato 'While Bexp [Stm]' que representa internamente
+esse statement.
 Ex: Parsec.parse whileParser "" "while (True) do (a :=10; b := 20;)" => 
       Right (While (Bool True) [Assign "a" (Num 10),Assign "b" (Num 20)])
 -}
@@ -659,7 +664,7 @@ whileParser = While <$> (try (string "while" >> Text.Parsec.Combinator.lookAhead
 {-
 Função que recebe como argumento uma string com um programa na nossa liguagem
 e faz parse do mesmo, retornando o programa na sua representação interna 
-(lista de statements). Se não conseguir devove uma exceção a indicar aonde se
+(lista de statements). Se não conseguir, devove uma exceção a indicar aonde se
 encontra o erro.
 -}
 parse :: String -> Program
@@ -680,7 +685,7 @@ throwParseError errorToThrow = error ("\nParse Error in " ++ show errorToThrow +
 {-
 Função que recebe como argumento uma string com o nome de um ficheiro, cujo
 conteudo é um programa na nossa liguagem e faz parse do mesmo, retornando o 
-programa na sua representação interna (lista de statements). Se não conseguir
+programa na sua representação interna (lista de statements). Se não conseguir,
 devove uma exceção a indicar aonde se encontra o erro.
 -}
 parseFile :: String -> IO [Stm]
