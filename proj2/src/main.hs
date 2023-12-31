@@ -541,8 +541,8 @@ reservedNames = ["if", "then", "else", "while", "do", "and", "not", "or"]
 
 {-
 Parser que faz parse do nome de uma variável. Este tem que começar com uma
-letra minuscula, e o restante do nome só pode conter letras(maiusculas ou 
-minusculas), números e underscores, além disso não pode ser nenhum dos nomes
+letra minúscula, e o restante do nome só pode conter letras (maiúsculas ou 
+minísculas), números e underscores, além disso não pode ser nenhum dos nomes
 reservados.
 Ex: Parsec.parse varNameParser "" "certo_numero_1" => Right "" "certo_numero_1"
 -}
@@ -554,13 +554,38 @@ varNameParser = do
     then return (first:rest)
     else error ("\nYou cannot name a variable " ++ (first:rest) ++ " because it is a reserved name.\n")
 
+{-
+Parser de expressões aritméticas. Recorre aos operadores aritméticos da nossa linguagem
+e ao parser de termos aritméticos, retornando uma cadeia de data Aexp.
+Ex: Parsec.parse aExpParser "" "(2+3)*5 - 4*3" => Right (SubExp (MultExp (AddExp (Num 2) (Num 3)) (Num 5)) (MultExp (Num 4) (Num 3)))
+-}
 aExpParser :: Parser Aexp
 aExpParser = buildExpressionParser aOperators aTerm
 
+{-
+Define os operadores aritméticos da linguagem, especificando a ordem de precedência, bem como
+a associativiade, posição na expressão aritmética (todos infixos, no caso) e correspondência
+com data Aexp de cada um.
+O resultado retornado é uma lista de listas em que cada sublista agrupa operadores
+com prioridade igual, sendo que os operadores da primeira sublista têm maior prioridade
+do que os da segunda, e assim por diante.
+No caso, o operador de multiplicação ('*') tem prioridade máxima, ao passo que o de adição ('+')
+e de subtração têm menor (e igual entre um e outro).
+-}
 aOperators :: [[Operator String () Data.Functor.Identity.Identity Aexp]]
 aOperators = [[Infix (MultExp <$ charWithSpaces '*') AssocLeft],
               [Infix (AddExp <$ charWithSpaces '+') AssocLeft, Infix (SubExp <$ charWithSpaces '-') AssocLeft]]
 
+{-
+Parser para termos de expressões aritméticas, fundamental para o parsing destas.
+Por termo entenda-se os operandos de uma expressão aritmética.
+Um termo pode ser uma outra expressão aritmética entre parênteses (no caso, recorre, ao parser para expressões),
+um inteiro ou o nome de uma variável.
+Retorna data Aexp.
+Ex: Parsec.parse aTerm "" "2" => Right (Num 2)
+    Parsec.parse aTerm "" "a" => Right (Var "a")
+    Parsec.parse aTerm "" "(2+5)" => Right (AddExp (Num 2) (Num 5))
+-}
 aTerm :: Parser Aexp
 aTerm = lexeme term
   where
@@ -569,9 +594,23 @@ aTerm = lexeme term
       <|> try (Var <$> lexeme varNameParser)
     parens = between (stringWithSpaces "(") (stringWithSpaces ")")
 
+{-
+Parser de expressões booleanas. Recorre aos operadores booleanos da nossa linguagem
+e ao parser de termos booleanos, retornando uma cadeia de data Bexp.
+Ex: Parsec.parse bExpParser "" "not True and 2 <= 5" => Right (AndExp (NegExp (Bool True)) (LeExp (Num 2) (Num 5)))
+-}
 bExpParser :: Parser Bexp
 bExpParser = buildExpressionParser bOperators bTerm
 
+{-
+Define os operadores booleanos da linguagem, especificando a ordem de precedência, bem como
+a associativiade, posição na expressão booleana e correspondência com data Bexp de cada um.
+O resultado retornado é uma lista de listas em que cada sublista agrupa operadores
+com prioridade igual, sendo que os operadores da primeira sublista têm maior prioridade
+do que os da segunda, e assim por diante.
+No caso, o operador de negação ("not") tem prioridade máxima, seguindo-se o de igualdade
+entre termos booleanos ("=") e, por último, o de conjunção ("and").
+-}
 bOperators :: [[Operator String () Data.Functor.Identity.Identity Bexp]]
 bOperators = [[Prefix (NegExp <$ stringWithSpaces "not")],
               [Infix (BEquExp <$ charWithSpaces '=') AssocNone],
