@@ -467,7 +467,7 @@ e retorna um conjunto de intruções equivalentes.
 Ex: compile [Assign "y" (AddExp (Var "x") (Num 1)), Assign "x" (Num 2)] =>
       [Push 1,Fetch "x",Add,Store "y",Push 2,Store "x"]
 -}
-compile :: Program -> Code
+compile :: [Stm] -> Code
 compile = concatMap compStm
 
 {-
@@ -512,7 +512,7 @@ charWithSpaces c = lexeme (char c)
 Parser que faz parse de uma string com código na nossa liguagem e devolve
 uma lista de statements, ou seja, um Program.
 -}
-codeParser :: Parser Program
+codeParser :: Parser [Stm]
 codeParser = many commentParser >> many (statementParser <* many commentParser) <* eof
 
 {-
@@ -667,7 +667,7 @@ e faz parse do mesmo, retornando o programa na sua representação interna
 (lista de statements). Se não conseguir, devove uma exceção a indicar aonde se
 encontra o erro.
 -}
-parse :: String -> Program
+parse :: String -> [Stm]
 parse programString | isRight res = parsedProgram
                     | isLeft res = throwParseError errorWhileParsing
     where
