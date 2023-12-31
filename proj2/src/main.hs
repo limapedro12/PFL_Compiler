@@ -556,7 +556,7 @@ varNameParser = do
 
 {-
 Parser de expressões aritméticas. Recorre aos operadores aritméticos da nossa linguagem
-e ao parser de termos aritméticos, retornando uma cadeia de data Aexp.
+e ao parser de termos aritméticos.
 Ex: Parsec.parse aExpParser "" "(2+3)*5 - 4*3" => Right (SubExp (MultExp (AddExp (Num 2) (Num 3)) (Num 5)) (MultExp (Num 4) (Num 3)))
 -}
 aExpParser :: Parser Aexp
@@ -581,7 +581,7 @@ Parser para termos de expressões aritméticas, fundamental para o parsing desta
 Por termo entenda-se os operandos de uma expressão aritmética.
 Um termo pode ser uma outra expressão aritmética entre parênteses (no caso, recorre, ao parser para expressões),
 um inteiro ou o nome de uma variável.
-Retorna data Aexp.
+A ordem dos "try" garante precendência de termos entre parênteses.
 Ex: Parsec.parse aTerm "" "2" => Right (Num 2)
     Parsec.parse aTerm "" "a" => Right (Var "a")
     Parsec.parse aTerm "" "(2+5)" => Right (AddExp (Num 2) (Num 5))
@@ -596,8 +596,10 @@ aTerm = lexeme term
 
 {-
 Parser de expressões booleanas. Recorre aos operadores booleanos da nossa linguagem
-e ao parser de termos booleanos, retornando uma cadeia de data Bexp.
+e ao parser de termos booleanos.
 Ex: Parsec.parse bExpParser "" "not True and 2 <= 5" => Right (AndExp (NegExp (Bool True)) (LeExp (Num 2) (Num 5)))
+    Parsec.parse bExpParser "" "2+5 == 7 = True" => Right (BEquExp (AEquExp (AddExp (Num 2) (Num 5)) (Num 7)) (Bool True))
+    Parsec.parse bExpParser "" "True = 2+5 == 7" => Right (BEquExp (Bool True) (AEquExp (AddExp (Num 2) (Num 5)) (Num 7)))
 -}
 bExpParser :: Parser Bexp
 bExpParser = buildExpressionParser bOperators bTerm
@@ -616,6 +618,16 @@ bOperators = [[Prefix (NegExp <$ stringWithSpaces "not")],
               [Infix (BEquExp <$ charWithSpaces '=') AssocNone],
               [Infix (AndExp <$ stringWithSpaces "and") AssocLeft]]
 
+{-
+Parser para termos de expressões booleanas, fundamental para o parsing destas.
+Por termo entenda-se os operandos de uma expressão booleanas.
+Um termo pode ser uma outra expressão booleana entre parênteses (no caso, recorre, ao parser para expressões),
+uma comparação aritmética ou um valor de verdade (True ou False).
+A ordem dos "try" garante a precedência de expressões entre parênteses e, de seguida, comparações aritméticas.
+Ex: Parsec.parse bTerm "" "True" => Right (Bool True)
+    Parsec.parse bTerm "" "(True and False)" => Right (Right (AndExp (Bool True) (Bool False)))
+    Parsec.parse bTerm "" "x <= y" => Right (LeExp (Var "x") (Var "y"))
+-}
 bTerm :: Parser Bexp
 bTerm = lexeme term
   where
@@ -626,6 +638,16 @@ bTerm = lexeme term
       <|> try (Bool True <$ lexeme (stringWithSpaces "True"))
     parens = between (stringWithSpaces "(") (stringWithSpaces ")")
 
+{-
+Parser de expressões de comparação aritmética. Para cada termo (operando da comparação), recorre
+ao parser para expressões aritméticas. Recorre ainda ao parser para operadores de comparação aritmética
+("<=" e '=').
+A implementação de um parser separado (do bExpParser) para comparações aritméticas deve-se ao facto de
+partir de termos aritméticos para produzir uma expressão booleana, algo que não é permitido no parser
+booleano geral pelo Parsec.
+Ex: Parsec.parse arithmeticComparisonParser "" "x == y" => Right (AEquExp (Var "x") (Var "y"))
+    Parsec.parse arithmeticComparisonParser "" "5+2 == 11" => Right (AEquExp (AddExp (Num 5) (Num 2)) (Num 11))
+-}
 arithmeticComparisonParser :: Text.Parsec.Prim.ParsecT   String () Data.Functor.Identity.Identity Bexp
 arithmeticComparisonParser =
   do a1 <- aExpParser
@@ -633,6 +655,10 @@ arithmeticComparisonParser =
      a2 <- aExpParser
      return (op a1 a2)
 
+{-
+Parser para operadores de comparação entre expressões aritméticas. A ordem dos statements garante
+a precedência esperada para os operadores de comparação.
+-}
 arithmeticComparisonOperators :: Text.Parsec.Prim.ParsecT   String () Data.Functor.Identity.Identity (Aexp -> Aexp -> Bexp)
 arithmeticComparisonOperators = (stringWithSpaces "<=" >> return LeExp)
                             <|> (stringWithSpaces "==" >> return AEquExp)
