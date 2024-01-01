@@ -132,6 +132,8 @@ commentParser :: Parser String
 
 É de notar que cada um dos sub-_parsers_ pode, ainda, recorrer a (sub-)sub-_parsers_, o que explica, por exemplo, a existência de um ```statementParser``` distinto de todos os _parsers_ para os diferentes tipos de _statements_.
 
+<br><br><br><br><br><br><br><br><br><br><br>
+
 Por último, há um aspeto a salientar, que se prende com o _parsing_ de expressões, nomeadamente as booleanas, e a maneira como é garantida a precedência desejada entre os operadores.
 
 Utilizando o Parsec, uma maneira genérica de definir um _parser_ para expressões é fazer com que o mesmo invoque a definição dos operadores (aritméticos ou booleanos) e um sub-_parser_ para os termos de uma expressão (por termo, entenda-se operando da expressão, que pode ser, também, uma nova expressão). Tal pode ser verificado, por exemplo, naquilo que diz respeito ao _parsing_ de expressões aritméticas:
@@ -159,6 +161,8 @@ aOperators = [[Infix (MultExp <$ charWithSpaces '*') AssocLeft],
 No sub-_parser_ ```aTerm```, a ordem dos "try" garante precendência de termos entre parênteses. Já em ```aOperators```, o resultado retornado é uma lista de listas em que cada sublista agrupa operadores com prioridade igual, sendo que os operadores da primeira sublista têm maior prioridade do que os da segunda, e assim por diante. No caso, o operador de multiplicação ('*') tem prioridade máxima, ao passo que o de adição ('+') e de subtração têm menor (e igual entre um e outro).
 
 Uma limitação deste método é que apenas permite que os termos de uma expressão aritmética sejam aritméticos, ou que termos de uma expressão booleana sejam booleanos.
+
+<br><br><br><br><br><br><br><br><br><br><br>
 
 Ora, para o segundo caso, sabemos que nem sempre tal se verifica na nossa pequena linguagem. Por exemplo, na expressão ```2 <= 5```, ```2``` e ```5``` são termos aritméticos, mas o resultado da expressão é um booleano, pelo que se está perante uma expressão booleana.
 
@@ -213,15 +217,46 @@ Salientamos duas funcionalidades implementadas, adicionais àquilo que é exigid
 
 ### Exemplos de utilização
 
-Lorem ipsum dolor sit amet.
+Seguem-se exemplos de utilização da solução implementada, dados pela chamada a fazer no GHCi e pelo respetivo retorno, um par com os conteúdos da pilha e da memória do programa executado.
+
+#### _Assembler_
+
+- ```testAssembler [Fals,Push 3,Tru,Store "var",Store "a", Store "someVar"]```
+    => ```("","a=3,someVar=False,var=True")```
+- ```testAssembler [Push 10,Store "i",Push 1,Store "fact",Loop [Push 1,Fetch "i",Equ,Neg] [Fetch "i",Fetch "fact",Mult,Store "fact",Push 1,Fetch "i",Sub,Store "i"]]```
+    => ```("","fact=3628800,i=1")```
+- ```testAssembler [Push 1,Push 2,And]```
+    => Obtém-se a mensagem de erro "Run-time error", dado que é impossível ```1 and 2```.
+
+#### Compilador e _Parser_
+
+- ```testParser "if (not True and 2 <= 5 = 3 == 4) then x :=1; else y := 2;"```
+    => ```("","y=2")```
+- ```testParser "i := 10; fact := 1; while (not(i == 1)) do (fact := fact * i; i := i - 1;);"```
+    => ```("","fact=3628800,i=1")```
+- ```testParserFile "codigo_exemplo2.pfl"```
+    => ```("","aux1=21,aux2=34,decimo_numero_fibonacci=34,i=9,temp=21")```
+- ```testParser "x:=5"```
+    => Obtém-se uma mensagem de erro que contém:<br>"unexpected end of input<br>expecting digit, white space, operator or ";"".
 
 ### Conclusões
 
-Lorem ipsum dolor sit amet.
+Foi implementada com sucesso uma solução para o problema apresentado no âmbito do trabalho.
+
+A sua realização permitiu aplicar, na prática, os conhecimentos adquiridos ao longo das aulas teórias e teorico-práticas da UC, além de ter constituído um primeiro projeto no paradigma da programação funcional. Foi uma oportunidade para aprimorar o domínio da linguagem Haskell.
+
+Além disso, em particular, pudemos ficar a conhecer a biblioteca Parsec para Haskell.
+
+<br><br>
 
 ### Bibliografia
 
-- Lorem ipsum dolor sit amet.
+- _Parsing a simple imperative language &mdash; HaskellWiki_
+    - https://wiki.haskell.org/Parsing_a_simple_imperative_language
+    - Consultada pela última vez a 01/01/2024
+- _Intro to Parsing with Parsec in Haskell_
+    - https://jakewheat.github.io/intro_to_parsing/
+    - Consultada pela última vez a 01/01/2024
 
 ***
-Grupo T05_G01, 01/01/2024
+Grupo T05_G01, 02/01/2024
