@@ -1,4 +1,4 @@
--- Segundo Projeto de Programação Funcional e Lógica 2023/24
+-- Segundo Projeto de Programação Funcional e em Lógica 2023/24
 
 import Distribution.TestSuite(TestInstance(name))
 import Data.List(sortOn)
@@ -18,7 +18,7 @@ import Data.Binary.Get (lookAhead)
 -- Part 1
 
 {-
-Tipo de dados que representa uma intrução assembly.
+Tipo de dados que representa uma instrução assembly.
 -}
 data Inst =
   Push Integer | Add | Mult | Sub | Tru | Fals | Equ | Le | And | Neg | Fetch String | Store String | Noop |
