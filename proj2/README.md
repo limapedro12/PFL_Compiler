@@ -94,11 +94,122 @@ Por último, tal como especificado no enunciado, temos ```compile :: [Stm] -> Co
 
 #### _Parser_
 
-Lorem ipsum dolor sit amet.
+O componente de _parsing_ da pequena linguagem de programação imperativa foi desenvolvido recorrendo à biblioteca Parsec.
 
-### Destaque
+No âmbito do Parsec, um _parser_ para uma linguagem é, na verdade, um conjunto de _parsers_ direcionados a subconjuntos da linguagem (no caso: expressões aritméticas e booleanas e seus termos, diferentes _statements_ e comentários). Assim, essencialmente, foram implementados:
 
-Lorem ipsum dolor sit amet.
+```haskell
+-- Expressões aritméticas
+aExpParser :: Parser Aexp
+
+-- Termos das expressões aritméticas (inteiros, nomes de variáveis ou outras expressões aritméticas)
+aTerm :: Parser Aexp
+intParser :: Parser Integer
+varNameParser :: Parser String
+
+
+-- Expressões booleanas
+bExpParser :: Parser Bexp
+
+-- Termos das expressões booleanas (comparações entre expressões aritméticas ou constantes de valores de verdade)
+arithmeticComparisonParser :: Text.Parsec.Prim.ParsecT   String () Data.Functor.Identity.Identity Bexp
+
+
+-- Statements
+statementParser :: Parser Stm
+
+-- Diferentes tipos de statements
+ifParser :: Parser Stm
+whileParser :: Parser Stm
+noStatementParser :: Parser Stm
+sequenceOfStatementsParser :: Parser Stm
+assignParser :: Parser Stm
+
+
+-- Comentários
+commentParser :: Parser String
+```
+
+É de notar que cada um dos sub-_parsers_ pode, ainda, recorrer a (sub-)sub-_parsers_, o que explica, por exemplo, a existência de um ```statementParser``` distinto de todos os _parsers_ para os diferentes tipos de _statements_.
+
+Por último, há um aspeto a salientar, que se prende com o _parsing_ de expressões, nomeadamente as booleanas, e a maneira como é garantida a precedência desejada entre os operadores.
+
+Utilizando o Parsec, uma maneira genérica de definir um _parser_ para expressões é fazer com que o mesmo invoque a definição dos operadores (aritméticos ou booleanos) e um sub-_parser_ para os termos de uma expressão (por termo, entenda-se operando da expressão, que pode ser, também, uma nova expressão). Tal pode ser verificado, por exemplo, naquilo que diz respeito ao _parsing_ de expressões aritméticas:
+
+```haskell
+-- Parser para expressões aritméticas
+aExpParser :: Parser Aexp
+aExpParser = buildExpressionParser aOperators aTerm
+
+-- Sub-parser para termos de uma expressão aritmética
+aTerm :: Parser Aexp
+aTerm = lexeme term
+  where
+    term = try (parens (lexeme aExpParser))
+      <|> try (Num <$> lexeme intParser)
+      <|> try (Var <$> lexeme varNameParser)
+    parens = between (stringWithSpaces "(") (stringWithSpaces ")")
+
+-- Operadores aritméticos
+aOperators :: [[Operator String () Data.Functor.Identity.Identity Aexp]]
+aOperators = [[Infix (MultExp <$ charWithSpaces '*') AssocLeft],
+              [Infix (AddExp <$ charWithSpaces '+') AssocLeft, Infix (SubExp <$ charWithSpaces '-') AssocLeft]]
+```
+
+No sub-_parser_ ```aTerm```, a ordem dos "try" garante precendência de termos entre parênteses. Já em ```aOperators```, o resultado retornado é uma lista de listas em que cada sublista agrupa operadores com prioridade igual, sendo que os operadores da primeira sublista têm maior prioridade do que os da segunda, e assim por diante. No caso, o operador de multiplicação ('*') tem prioridade máxima, ao passo que o de adição ('+') e de subtração têm menor (e igual entre um e outro).
+
+Uma limitação deste método é que apenas permite que os termos de uma expressão aritmética sejam aritméticos, ou que termos de uma expressão booleana sejam booleanos.
+
+Ora, para o segundo caso, sabemos que nem sempre tal se verifica na nossa pequena linguagem. Por exemplo, na expressão ```2 <= 5```, ```2``` e ```5``` são termos aritméticos, mas o resultado da expressão é um booleano, pelo que se está perante uma expressão booleana.
+
+Analogamente à situação anterior, temos:
+
+```haskell
+-- Parser para expressões booleanas
+bExpParser :: Parser Bexp
+bExpParser = buildExpressionParser bOperators bTerm
+
+-- Sub-parser para termos de uma expressão booleana
+bTerm :: Parser Bexp
+bTerm = lexeme term
+  where
+    term = try (parens (lexeme bExpParser))
+      <|> try (lexeme arithmeticComparisonParser)
+      <|> try (NegExp <$> (stringWithSpaces "not" >> bExpParser))
+      <|> try (Bool False <$ lexeme (stringWithSpaces "False"))
+      <|> try (Bool True <$ lexeme (stringWithSpaces "True"))
+    parens = between (stringWithSpaces "(") (stringWithSpaces ")")
+
+-- Operadores para booleanos
+bOperators :: [[Operator String () Data.Functor.Identity.Identity Bexp]]
+bOperators = [[Prefix (NegExp <$ stringWithSpaces "not")],
+              [Infix (BEquExp <$ charWithSpaces '=') AssocNone],
+              [Infix (AndExp <$ stringWithSpaces "and") AssocLeft]]
+```
+
+Como se pode verificar, falta a definição dos operadores de comparação entre termos aritméticos. Recordando a limitação exposta, é necessária uma outra maneira de definir um (sub-)_parser_ para expressões em que o tipo dos termos não corresponde ao tipo do resultado:
+
+```haskell
+arithmeticComparisonParser :: Text.Parsec.Prim.ParsecT   String () Data.Functor.Identity.Identity Bexp
+arithmeticComparisonParser =
+  do a1 <- aExpParser
+     op <- arithmeticComparisonOperators
+     a2 <- aExpParser
+     return (op a1 a2)
+
+arithmeticComparisonOperators :: Text.Parsec.Prim.ParsecT   String () Data.Functor.Identity.Identity (Aexp -> Aexp -> Bexp)
+arithmeticComparisonOperators = (stringWithSpaces "<=" >> return LeExp)
+                            <|> (stringWithSpaces "==" >> return AEquExp)
+```
+
+Surge, então, o ```arithmeticComparisonParser```, que pode ser visto a ser invocado em ```bTerm```. Recordando, precisamente, ```bTerm```, a prioridade que os operadores de comparação entre termos aritméticos devem ter sobre os operadores entre termos booleanos é garantida pela ordem dos "try" nessa função.
+
+### Funcionalidades adicionais
+
+Salientamos duas funcionalidades implementadas, adicionais àquilo que é exigido pelo enunciado:
+
+- Capacidade para _parsing_ de comentários (iniciados por ```//```);
+- Possibilidade de _parsing_ (e, consequentemente, compilação e execução) de programas escritos em ficheiros de texto separados, i.e. sem ter de colar o código-fonte no GHCi. No diretório ```src```, encontram-se dois ficheiros com código-fonte de exemplo (com a extensão ```.pfl``` para a nossa pequena linguagem), que podem ser executados invocando ```testParserFile```.
 
 ### Exemplos de utilização
 
@@ -107,6 +218,10 @@ Lorem ipsum dolor sit amet.
 ### Conclusões
 
 Lorem ipsum dolor sit amet.
+
+### Bibliografia
+
+- Lorem ipsum dolor sit amet.
 
 ***
 Grupo T05_G01, 01/01/2024
