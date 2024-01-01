@@ -1,6 +1,10 @@
 # Segundo Trabalho Prático de PFL 2023
 
-It should also describe the strategy used for solving both parts of the assignment, detailing the decisions made when defining the data and functions defined in the program.
+## Âmbito
+
+O presente documento diz respeito ao Segundo Trabalho Prático da Unidade Curricular de Programação Funcional e em Lógica, da Licenciatura em Engenharia Informática e Computação, no ano letivo 2023/24.
+
+O trabalho representa a aplicação prática de conhecimentos adquiridos no âmbito do estudo do paradigma de programação funcional, através da linguagem Haskell.
 
 ## Grupo e Distribuição de Trabalho
 
@@ -9,9 +13,9 @@ Grupo **T05_G01**:
 - Pedro de Almeida Lima (<a href="mailto:up202108806@up.pt">up202108806@up.pt</a>) - contributo de 50%
 - Pedro Simão Januário Vieira (<a href="mailto:up202108768@up.pt">up202108768@up.pt</a>) - contributo de 50%
 
-## Âmbito do Trabalho e Problema
+## Problema
 
-O problema proposto para abordagem no trabalho a que o presente documento diz respeito centra-se numa pequena linguagem de programação imperativa.
+O problema proposto para abordagem no descrito trabalho centra-se numa pequena linguagem de programação imperativa.
 
 Num primeiro momento, foi implementado um _assembler_ que, dadas instruções em código análogo ao Assembly para as operações oferecidas pela pequena linguagem, é capaz de simular a execução do código, recorrendo a estruturas de dados que fornecem abstrações para uma pilha (_stack_), um pequeno armazenamento (_state_) e a própria sequência de instruções.
 
@@ -49,13 +53,44 @@ add stack = push result (pop (pop stack))
 
 No caso, podemos constatar que o trabalho de verificação de verificação da viabilidade da operação (dado que, concretamente, apenas podemos adicionar dois inteiros e não um inteiro e um booleano, ou dois booleanos) e de efetuar a adição em si é deixado para ```addValues```, ficando a função primária, ```add```, com a responsabilidade de manipular a pilha recorrendo ao resultado da operação.
 
-Por último, temos a função ```run :: (Code, Stack, State) -> (Code, Stack, State)``` que garante o fluxo de processamento das instruções desejadas. É recursiva; para uma dada instrução, após invocar a função correspondente, chama-se a si própria com as instruções restantes, bem como a pilha e o estado resultantes da operação efetuada.
+Por último, temos a função ```run :: (Code, Stack, State) -> (Code, Stack, State)```, que garante o fluxo de processamento das instruções desejadas. É recursiva; para uma dada instrução, após invocar a função correspondente, chama-se a si própria com as instruções restantes, bem como a pilha e o estado resultantes da operação efetuada.
 
 ### Segunda parte &mdash; Compilador e _Parser_
 
 #### Compilador
 
-Lorem ipsum dolor sit amet.
+Tal como pretendido no enunciado, definimos 3 estruturas fundamentais no âmbito da compilação dos programas: ```data Aexp```, para representar expressões aritméticas, i.e. que produzem um inteiro como resultado, ```data Bexp```, para representar expressões booleanas, i.e. que produzem um booleano como resultado, e ```data Stm```, para representar aquilo que, numa linguagem de programação imperativa, não é expressão: _statements_, que podem conter expressões e outros _statements_. Definimos, ainda, ```type Program = [Stm]```, que estabelece que um programa, no âmbito da segunda parte do trabalho, é uma sequência de _statements_, dado que uma expressão, por si só, não tem efeito num programa escrito numa linguagem imperativa, i.e. apenas tem valor se enquadrada num _statement_ que defina o que efetivamente se faz com o seu resultado.
+
+As estruturas descritas servem como base comum entre o compilador e o _parser_, dado que o _parsing_ da pequena linguagem produz instâncias delas.
+
+Implementámos 3 funções basilares da compilação:
+```haskell
+compA :: Aexp -> Code
+compA (AddExp a1 a2) = compA a2 ++ compA a1 ++ [Add]
+compA (MultExp a1 a2) = compA a2 ++ compA a1 ++ [Mult]
+compA (SubExp a1 a2) = compA a2 ++ compA a1 ++ [Sub]
+compA (Var x) = [Fetch x]
+compA (Num n) = [Push n]
+
+compB :: Bexp -> Code
+compB (AndExp b1 b2) = compB b2 ++ compB b1 ++ [And]
+compB (LeExp a1 a2) = compA a2 ++ compA a1 ++ [Le]
+compB (AEquExp a1 a2) = compA a2 ++ compA a1 ++ [Equ]
+compB (BEquExp b1 b2) = compB b2 ++ compB b1 ++ [Equ]
+compB (NegExp b) = compB b ++ [Neg]
+compB (Bool True) = [Tru]
+compB (Bool False) = [Fals]
+
+compStm :: Stm -> Code
+compStm (Assign name a) = compA a ++ [Store name]
+compStm (While b stmList) = [Loop (compB b) (compStm stmList)]
+compStm (IfThenElse b thenStmList elseStmList) = compB b ++ [Branch (compStm thenStmList) (compStm elseStmList)]
+compStm (SequenceOfStatements stmList) = concatMap compStm stmList
+compStm NoopStm = [Noop]
+```
+São responsáveis por transformar expressões aritméticas, booleanas e _statements_, respetivamente, em código _assembly_ tal como definido na primeira parte do trabalho, assegurando a correta ordem deste código. Como pode ser observado, todas elas recorrem à recursividade, uma vez que a natureza tanto das expressões como dos _statements_ pressupõe imbricação.
+
+Por último, tal como especificado no enunciado, temos ```compile :: [Stm] -> Code``` que, através de uma chamada a ```concatMap```, do prelúdio-padrão, obtém o código _assembly_ correspondente a cada _statement_ e concatena-o numa só lista de instruções _assembly_ (recordando, da primeira parte, que ```type Code = [Inst]```).
 
 #### _Parser_
 
@@ -65,7 +100,7 @@ Lorem ipsum dolor sit amet.
 
 Lorem ipsum dolor sit amet.
 
-### Casos de uso principais e Exemplos
+### Exemplos de utilização
 
 Lorem ipsum dolor sit amet.
 
