@@ -134,7 +134,7 @@ commentParser :: Parser String
 
 <br><br><br><br><br><br><br><br><br><br><br>
 
-Por último, há um aspeto a salientar, que se prende com o _parsing_ de expressões, nomeadamente as booleanas, e a maneira como é garantida a precedência desejada entre os operadores.
+Por último, há um aspeto a salientar, que se prende com o _parsing_ de expressões:
 
 Utilizando o Parsec, uma maneira genérica de definir um _parser_ para expressões é fazer com que o mesmo invoque a definição dos operadores (aritméticos ou booleanos) e um sub-_parser_ para os termos de uma expressão (por termo, entenda-se operando da expressão, que pode ser, também, uma nova expressão). Tal pode ser verificado, por exemplo, naquilo que diz respeito ao _parsing_ de expressões aritméticas:
 
@@ -162,7 +162,7 @@ No sub-_parser_ ```aTerm```, a ordem dos "try" garante precendência de termos e
 
 Uma limitação deste método é que apenas permite que os termos de uma expressão aritmética sejam aritméticos, ou que termos de uma expressão booleana sejam booleanos.
 
-<br><br><br><br><br><br><br><br><br><br><br>
+<br><br><br><br><br><br><br><br><br><br><br><br><br>
 
 Ora, para o segundo caso, sabemos que nem sempre tal se verifica na nossa pequena linguagem. Por exemplo, na expressão ```2 <= 5```, ```2``` e ```5``` são termos aritméticos, mas o resultado da expressão é um booleano, pelo que se está perante uma expressão booleana.
 
@@ -179,7 +179,6 @@ bTerm = lexeme term
   where
     term = try (parens (lexeme bExpParser))
       <|> try (lexeme arithmeticComparisonParser)
-      <|> try (NegExp <$> (stringWithSpaces "not" >> bExpParser))
       <|> try (Bool False <$ lexeme (stringWithSpaces "False"))
       <|> try (Bool True <$ lexeme (stringWithSpaces "True"))
     parens = between (stringWithSpaces "(") (stringWithSpaces ")")
@@ -208,12 +207,14 @@ arithmeticComparisonOperators = (stringWithSpaces "<=" >> return LeExp)
 
 Surge, então, o ```arithmeticComparisonParser```, que pode ser visto a ser invocado em ```bTerm```. Recordando, precisamente, ```bTerm```, a prioridade que os operadores de comparação entre termos aritméticos devem ter sobre os operadores entre termos booleanos é garantida pela ordem dos "try" nessa função.
 
+<br>
+
 ### Funcionalidades adicionais
 
 Salientamos duas funcionalidades implementadas, adicionais àquilo que é exigido pelo enunciado:
 
 - Capacidade para _parsing_ de comentários (iniciados por ```//```);
-- Possibilidade de _parsing_ (e, consequentemente, compilação e execução) de programas escritos em ficheiros de texto separados, i.e. sem ter de colar o código-fonte no GHCi. No diretório ```src```, encontram-se dois ficheiros com código-fonte de exemplo (com a extensão ```.pfl``` para a nossa pequena linguagem), que podem ser executados invocando ```testParserFile```.
+- Possibilidade de _parsing_ (e, consequentemente, compilação e execução) de programas escritos em ficheiros de texto separados, i.e. sem ter de colar o código-fonte no GHCi. No diretório ```src```, encontram-se dois ficheiros com código-fonte de exemplo (não necessariamente, naturalmente, com a extensão ```.pfl``` para a nossa pequena linguagem), que podem ser executados invocando ```testParserFile```.
 
 ### Exemplos de utilização
 

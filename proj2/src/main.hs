@@ -633,7 +633,6 @@ bTerm = lexeme term
   where
     term = try (parens (lexeme bExpParser))
       <|> try (lexeme arithmeticComparisonParser)
-      <|> try (NegExp <$> (stringWithSpaces "not" >> bExpParser))
       <|> try (Bool False <$ lexeme (stringWithSpaces "False"))
       <|> try (Bool True <$ lexeme (stringWithSpaces "True"))
     parens = between (stringWithSpaces "(") (stringWithSpaces ")")
